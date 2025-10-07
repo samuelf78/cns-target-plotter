@@ -18,6 +18,7 @@ import socket
 import serial
 import serial.tools.list_ports
 import threading
+from bson import ObjectId
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
