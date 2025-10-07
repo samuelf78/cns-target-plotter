@@ -477,23 +477,24 @@ async def search_vessels(query: SearchQuery):
 @api_router.get("/positions/recent")
 async def get_recent_positions(limit: int = 100):
     """Get recent positions for all vessels"""
-    # Get unique MMSIs with their latest position
-    pipeline = [
-        {'$sort': {'timestamp': -1}},
-        {'$group': {
-            '_id': '$mmsi',
-            'latest': {'$first': '$$ROOT'}
-        }},
-        {'$limit': limit}
-    ]
-    
-    results = await db.positions.aggregate(pipeline).to_list(limit)
-    positions = [r['latest'] for r in results]
-    
-    for p in positions:
-        p['_id'] = str(p['_id'])
-    
-    return {'positions': positions}
+    try:
+        # Get unique MMSIs with their latest position
+        pipeline = [
+            {'$sort': {'timestamp': -1}},
+            {'$group': {
+                '_id': '$mmsi',
+                'latest': {'$first': '$$ROOT'}
+            }},
+            {'$limit': limit}
+        ]
+        
+        results = await db.positions.aggregate(pipeline).to_list(limit)
+        positions = [serialize_doc(r['latest']) for r in results]
+        
+        return {'positions': positions}
+    except Exception as e:
+        logger.error(f"Error loading recent positions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load positions: {str(e)}")
 
 @api_router.get("/track/{mmsi}")
 async def get_vessel_track(mmsi: str, limit: int = 1000):
