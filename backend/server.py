@@ -353,10 +353,12 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     # Start appropriate stream
     if config.stream_type == 'tcp':
         active_streams[stream_id] = 'tcp'
-        background_tasks.add_task(tcp_stream_handler)
+        thread = threading.Thread(target=tcp_stream_handler, daemon=True)
+        thread.start()
     elif config.stream_type == 'udp':
         active_streams[stream_id] = 'udp'
-        background_tasks.add_task(udp_stream_handler)
+        thread = threading.Thread(target=udp_stream_handler, daemon=True)
+        thread.start()
     elif config.stream_type == 'serial':
         active_streams[stream_id] = 'serial'
         thread = threading.Thread(target=serial_stream_handler, daemon=True)
