@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 import asyncio
 import json
 from pyais import decode
-from pyais.stream import TCPStream, UDPStream
+from pyais.stream import TCPConnection, UDPReceiver, FileReaderStream
 import socket
 import serial
 import serial.tools.list_ports
