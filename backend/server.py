@@ -424,10 +424,13 @@ async def list_serial_ports():
 @api_router.get("/vessels")
 async def get_vessels(limit: int = 100):
     """Get all vessels"""
-    vessels = await db.vessels.find().sort('last_seen', -1).limit(limit).to_list(limit)
-    for v in vessels:
-        v['_id'] = str(v['_id'])
-    return {'vessels': vessels}
+    try:
+        vessels = await db.vessels.find().sort('last_seen', -1).limit(limit).to_list(limit)
+        serialized_vessels = [serialize_doc(v) for v in vessels]
+        return {'vessels': serialized_vessels}
+    except Exception as e:
+        logger.error(f"Error loading vessels: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load vessels: {str(e)}")
 
 @api_router.get("/vessel/{mmsi}")
 async def get_vessel(mmsi: str):
