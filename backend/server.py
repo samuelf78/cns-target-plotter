@@ -310,21 +310,29 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     """Start TCP/UDP/Serial stream"""
     stream_id = str(uuid.uuid4())
     
-    async def tcp_stream_handler():
+    def tcp_stream_handler():
         try:
-            for msg in TCPStream(config.host, port=config.port):
-                await process_ais_message(str(msg.raw), source='tcp')
+            conn = TCPConnection(config.host, port=config.port)
+            for msg in conn:
                 if stream_id not in active_streams:
                     break
+                try:
+                    asyncio.create_task(process_ais_message(msg.decode(), source='tcp'))
+                except Exception as e:
+                    logger.error(f"Error processing TCP message: {e}")
         except Exception as e:
             logger.error(f"TCP stream error: {e}")
     
-    async def udp_stream_handler():
+    def udp_stream_handler():
         try:
-            for msg in UDPStream(config.host, port=config.port):
-                await process_ais_message(str(msg.raw), source='udp')
+            receiver = UDPReceiver(config.host, port=config.port)
+            for msg in receiver:
                 if stream_id not in active_streams:
                     break
+                try:
+                    asyncio.create_task(process_ais_message(msg.decode(), source='udp'))
+                except Exception as e:
+                    logger.error(f"Error processing UDP message: {e}")
         except Exception as e:
             logger.error(f"UDP stream error: {e}")
     
