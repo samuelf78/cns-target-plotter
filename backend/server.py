@@ -313,11 +313,14 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     def tcp_stream_handler():
         try:
             conn = TCPConnection(config.host, port=config.port)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
             for msg in conn:
                 if stream_id not in active_streams:
                     break
                 try:
-                    asyncio.create_task(process_ais_message(msg.decode(), source='tcp'))
+                    loop.run_until_complete(process_ais_message(msg.decode(), source='tcp'))
                 except Exception as e:
                     logger.error(f"Error processing TCP message: {e}")
         except Exception as e:
@@ -326,11 +329,14 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     def udp_stream_handler():
         try:
             receiver = UDPReceiver(config.host, port=config.port)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
             for msg in receiver:
                 if stream_id not in active_streams:
                     break
                 try:
-                    asyncio.create_task(process_ais_message(msg.decode(), source='udp'))
+                    loop.run_until_complete(process_ais_message(msg.decode(), source='udp'))
                 except Exception as e:
                     logger.error(f"Error processing UDP message: {e}")
         except Exception as e:
