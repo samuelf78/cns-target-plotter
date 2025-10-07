@@ -345,11 +345,14 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     def serial_stream_handler():
         try:
             ser = serial.Serial(config.serial_port, config.baudrate, timeout=1)
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
             while stream_id in active_streams:
                 try:
                     line = ser.readline().decode('utf-8', errors='ignore').strip()
                     if line:
-                        asyncio.create_task(process_ais_message(line, source='serial'))
+                        loop.run_until_complete(process_ais_message(line, source='serial'))
                 except Exception as e:
                     logger.error(f"Serial read error: {e}")
             ser.close()
