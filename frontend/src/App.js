@@ -148,6 +148,10 @@ function App() {
       });
     } catch (error) {
       console.error('Error loading positions:', error);
+      const errorMsg = error.response?.data?.detail || error.message;
+      if (errorMsg) {
+        toast.error(`Failed to load positions: ${errorMsg}`);
+      }
     }
   };
 
