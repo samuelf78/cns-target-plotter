@@ -142,10 +142,13 @@ async def process_ais_message(raw_message: str, source: str = "unknown"):
     """Process and store AIS message"""
     try:
         # Decode the message
-        decoded = decode(raw_message)
+        decoded_msg = decode(raw_message)
         
-        if not decoded:
+        if not decoded_msg:
             return
+        
+        # Convert to dict
+        decoded = decoded_msg.asdict()
         
         mmsi = str(decoded.get('mmsi', 'unknown'))
         msg_type = decoded.get('msg_type', 0)
