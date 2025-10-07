@@ -435,18 +435,23 @@ async def get_vessels(limit: int = 100):
 @api_router.get("/vessel/{mmsi}")
 async def get_vessel(mmsi: str):
     """Get vessel details by MMSI"""
-    vessel = await db.vessels.find_one({'mmsi': mmsi})
-    if vessel:
-        vessel['_id'] = str(vessel['_id'])
-        
-        # Get recent positions
-        positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).limit(100).to_list(100)
-        for p in positions:
-            p['_id'] = str(p['_id'])
-        
-        vessel['track'] = positions
-        return vessel
-    raise HTTPException(status_code=404, detail="Vessel not found")
+    try:
+        vessel = await db.vessels.find_one({'mmsi': mmsi})
+        if vessel:
+            vessel = serialize_doc(vessel)
+            
+            # Get recent positions
+            positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).limit(100).to_list(100)
+            positions = [serialize_doc(p) for p in positions]
+            
+            vessel['track'] = positions
+            return vessel
+        raise HTTPException(status_code=404, detail="Vessel not found")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading vessel {mmsi}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load vessel: {str(e)}")
 
 @api_router.post("/search")
 async def search_vessels(query: SearchQuery):
