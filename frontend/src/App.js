@@ -278,8 +278,13 @@ function App() {
         vessel_name: searchName || undefined
       });
       setVessels(response.data.vessels || []);
+      if (response.data.vessels.length === 0) {
+        toast.info('No vessels found matching your search');
+      }
     } catch (error) {
-      toast.error('Search failed');
+      console.error('Search error:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+      toast.error(`Search failed: ${errorMsg}`);
     }
   };
 
