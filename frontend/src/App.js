@@ -123,7 +123,8 @@ function App() {
       setVessels(response.data.vessels || []);
     } catch (error) {
       console.error('Error loading vessels:', error);
-      toast.error('Failed to load vessels');
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+      toast.error(`Failed to load vessels: ${errorMsg}`);
     }
   };
 
