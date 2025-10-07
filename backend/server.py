@@ -456,20 +456,23 @@ async def get_vessel(mmsi: str):
 @api_router.post("/search")
 async def search_vessels(query: SearchQuery):
     """Search vessels"""
-    filter_query = {}
-    
-    if query.mmsi:
-        filter_query['mmsi'] = {'$regex': query.mmsi, '$options': 'i'}
-    if query.vessel_name:
-        filter_query['name'] = {'$regex': query.vessel_name, '$options': 'i'}
-    if query.ship_type is not None:
-        filter_query['ship_type'] = query.ship_type
-    
-    vessels = await db.vessels.find(filter_query).limit(100).to_list(100)
-    for v in vessels:
-        v['_id'] = str(v['_id'])
-    
-    return {'vessels': vessels}
+    try:
+        filter_query = {}
+        
+        if query.mmsi:
+            filter_query['mmsi'] = {'$regex': query.mmsi, '$options': 'i'}
+        if query.vessel_name:
+            filter_query['name'] = {'$regex': query.vessel_name, '$options': 'i'}
+        if query.ship_type is not None:
+            filter_query['ship_type'] = query.ship_type
+        
+        vessels = await db.vessels.find(filter_query).limit(100).to_list(100)
+        serialized_vessels = [serialize_doc(v) for v in vessels]
+        
+        return {'vessels': serialized_vessels}
+    except Exception as e:
+        logger.error(f"Error searching vessels: {e}")
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
 @api_router.get("/positions/recent")
 async def get_recent_positions(limit: int = 100):
