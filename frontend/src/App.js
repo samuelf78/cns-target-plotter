@@ -209,11 +209,20 @@ function App() {
 
     try {
       const response = await axios.post(`${API}/upload`, formData);
-      toast.success(`Processed ${response.data.processed} messages`);
-      await loadVessels();
-      await loadRecentPositions();
+      const processed = response.data.processed || 0;
+      const errors = response.data.errors || 0;
+      
+      if (processed > 0) {
+        toast.success(`Processed ${processed} messages${errors > 0 ? ` (${errors} errors)` : ''}`);
+        await loadVessels();
+        await loadRecentPositions();
+      } else {
+        toast.warning('No valid AIS messages found in file');
+      }
     } catch (error) {
-      toast.error('Upload failed');
+      console.error('Upload error:', error);
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+      toast.error(`Upload failed: ${errorMsg}`);
     } finally {
       setUploadProgress(false);
     }
