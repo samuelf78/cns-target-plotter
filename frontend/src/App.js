@@ -68,6 +68,7 @@ function App() {
   const [selectedVessel, setSelectedVessel] = useState(null);
   const [vesselTrack, setVesselTrack] = useState([]);
   const [loadingTrack, setLoadingTrack] = useState(false);
+  const [showVesselPanel, setShowVesselPanel] = useState(false);
   const [vesselHistory, setVesselHistory] = useState(null);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [expandedFields, setExpandedFields] = useState({});
