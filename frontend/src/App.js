@@ -96,8 +96,7 @@ function App() {
   const pollIntervalRef = useRef(null);
 
   useEffect(() => {
-    loadVessels();
-    loadRecentPositions();
+    // Don't load vessels by default - only load when searching
     loadSources();
     startPolling();
     loadSerialPorts();
