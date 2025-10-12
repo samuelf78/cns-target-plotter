@@ -940,19 +940,33 @@ async def get_recent_positions(limit: int = 100):
 
 @api_router.get("/track/{mmsi}")
 async def get_vessel_track(mmsi: str, limit: int = 10000):
-    """Get vessel track history"""
+    """Get vessel track history - properly sorted by timestamp across all sources"""
     try:
-        # Only get essential fields for performance
+        # Get positions from ALL sources for this MMSI
+        # Sort by timestamp ascending (oldest first) for proper trail drawing
         positions = await db.positions.find(
             {'mmsi': mmsi},
-            {'lat': 1, 'lon': 1, 'timestamp': 1, 'speed': 1, 'course': 1, 'heading': 1}
-        ).sort('timestamp', -1).limit(limit).to_list(limit)
+            {'lat': 1, 'lon': 1, 'timestamp': 1, 'speed': 1, 'course': 1, 'heading': 1, 'source_id': 1}
+        ).sort('timestamp', 1).limit(limit).to_list(limit)
         
-        serialized_positions = [serialize_doc(p) for p in positions]
+        # Remove duplicates (same timestamp from different sources) - keep first occurrence
+        seen_timestamps = set()
+        unique_positions = []
+        for pos in positions:
+            ts = pos.get('timestamp')
+            if ts not in seen_timestamps:
+                seen_timestamps.add(ts)
+                unique_positions.append(pos)
+        
+        serialized_positions = [serialize_doc(p) for p in unique_positions]
+        
+        logger.info(f"Track for {mmsi}: {len(unique_positions)} unique positions from {len(positions)} total")
+        
         return {
             'mmsi': mmsi, 
             'track': serialized_positions,
-            'count': len(serialized_positions)
+            'count': len(serialized_positions),
+            'total_records': len(positions)
         }
     except Exception as e:
         logger.error(f"Error loading track for {mmsi}: {e}")
