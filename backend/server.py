@@ -497,24 +497,73 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
         try:
             logger.info(f"Starting UDP receiver: {config.host}:{config.port}")
             receiver = UDPReceiver(config.host, port=config.port)
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
             
             logger.info(f"UDP receiver started: {config.host}:{config.port}")
+            
+            import pymongo
+            sync_client = pymongo.MongoClient(mongo_url)
+            sync_db = sync_client[os.environ['DB_NAME']]
             
             for msg in receiver:
                 if source_id not in active_streams:
                     logger.info(f"UDP stream {source_id} stopped")
                     break
                 try:
-                    loop.run_until_complete(process_ais_message(msg.decode(), source=f'udp:{config.host}:{config.port}', source_id=source_id))
-                    loop.run_until_complete(db.sources.update_one(
-                        {'source_id': source_id},
-                        {
-                            '$inc': {'message_count': 1},
-                            '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+                    decoded_msg = msg.decode()
+                    decoded_obj = decode(decoded_msg)
+                    if decoded_obj:
+                        decoded = decoded_obj.asdict()
+                        mmsi = str(decoded.get('mmsi', 'unknown'))
+                        msg_type = decoded.get('msg_type', 0)
+                        timestamp = datetime.now(timezone.utc)
+                        
+                        message_doc = {
+                            'mmsi': mmsi,
+                            'timestamp': timestamp.isoformat(),
+                            'message_type': msg_type,
+                            'raw': decoded_msg,
+                            'decoded': decoded,
+                            'source': f'udp:{config.host}:{config.port}',
+                            'source_id': source_id
                         }
-                    ))
+                        sync_db.messages.insert_one(message_doc)
+                        
+                        if msg_type in [1, 2, 3, 18]:
+                            position_doc = {
+                                'mmsi': mmsi,
+                                'timestamp': timestamp.isoformat(),
+                                'lat': decoded.get('lat'),
+                                'lon': decoded.get('lon'),
+                                'speed': decoded.get('speed'),
+                                'course': decoded.get('course'),
+                                'heading': decoded.get('heading'),
+                                'nav_status': decoded.get('status'),
+                                'source_id': source_id
+                            }
+                            sync_db.positions.insert_one(position_doc)
+                            
+                            pos_count = sync_db.positions.count_documents({'mmsi': mmsi})
+                            
+                            sync_db.vessels.update_one(
+                                {'mmsi': mmsi},
+                                {
+                                    '$set': {
+                                        'last_position': position_doc,
+                                        'last_seen': timestamp.isoformat(),
+                                        'position_count': pos_count
+                                    },
+                                    '$addToSet': {'source_ids': source_id}
+                                },
+                                upsert=True
+                            )
+                        
+                        sync_db.sources.update_one(
+                            {'source_id': source_id},
+                            {
+                                '$inc': {'message_count': 1},
+                                '$set': {'last_message': timestamp.isoformat()}
+                            }
+                        )
                 except Exception as e:
                     logger.error(f"Error processing UDP message: {e}")
         except Exception as e:
