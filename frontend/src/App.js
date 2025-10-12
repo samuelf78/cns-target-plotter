@@ -701,17 +701,40 @@ function App() {
                 </div>
               </CardHeader>
               <CardContent>
-                {sources.length > 0 && (
+                <div className="space-y-2 mb-3">
+                  {sources.length > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="w-full"
+                      onClick={disableAllSources}
+                    >
+                      <PowerOff size={16} className="mr-2" />
+                      Disable All Sources
+                    </Button>
+                  )}
                   <Button
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    className="w-full mb-3"
-                    onClick={disableAllSources}
+                    className="w-full"
+                    onClick={async () => {
+                      if (window.confirm('Clear all vessel data? This will remove all vessels, positions, and messages from the database. Sources will be kept.')) {
+                        try {
+                          const response = await axios.post(`${API}/database/clear`);
+                          toast.success(`Database cleared: ${response.data.vessels_deleted} vessels, ${response.data.positions_deleted} positions, ${response.data.messages_deleted} messages`);
+                          setVessels([]);
+                          setSelectedVessel(null);
+                          setVesselTrack([]);
+                        } catch (error) {
+                          toast.error('Failed to clear database');
+                        }
+                      }
+                    }}
                   >
-                    <PowerOff size={16} className="mr-2" />
-                    Disable All Sources
+                    <Trash2 size={16} className="mr-2" />
+                    Clear Database
                   </Button>
-                )}
+                </div>
                 <ScrollArea className="h-96">
                   {sources.length === 0 ? (
                     <p className="text-center text-gray-400 py-4">No data sources</p>
