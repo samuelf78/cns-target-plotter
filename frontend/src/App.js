@@ -541,6 +541,9 @@ function App() {
                     key={vessel.mmsi}
                     position={[vessel.last_position.lat, vessel.last_position.lon]}
                     icon={createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount)}
+                    eventHandlers={{
+                      click: () => selectVessel(vessel)
+                    }}
                   >
                     <Popup>
                       <div className="vessel-popup">
