@@ -172,7 +172,7 @@ def get_ship_type_text(ship_type: int) -> str:
     }
     return ship_types.get(ship_type, f"Unknown ({ship_type})")
 
-async def process_ais_message(raw_message: str, source: str = "unknown"):
+async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None):
     """Process and store AIS message"""
     try:
         # Decode the message
