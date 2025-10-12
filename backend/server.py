@@ -566,7 +566,8 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                                     '$set': {
                                         'last_position': position_doc,
                                         'last_seen': timestamp.isoformat(),
-                                        'position_count': pos_count
+                                        'position_count': pos_count,
+                                        'country': get_mmsi_country(mmsi)
                                     },
                                     '$addToSet': {'source_ids': source_id}
                                 },
@@ -646,7 +647,8 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                                     '$set': {
                                         'last_position': position_doc,
                                         'last_seen': timestamp.isoformat(),
-                                        'position_count': pos_count
+                                        'position_count': pos_count,
+                                        'country': get_mmsi_country(mmsi)
                                     },
                                     '$addToSet': {'source_ids': source_id}
                                 },
