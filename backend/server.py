@@ -884,18 +884,31 @@ async def get_vessel(mmsi: str):
 
 @api_router.post("/search")
 async def search_vessels(query: SearchQuery):
-    """Search vessels"""
+    """Search vessels by MMSI, name, or callsign"""
     try:
-        filter_query = {}
+        # Get active source IDs
+        active_sources = await db.sources.find({'status': 'active'}).to_list(100)
+        active_source_ids = [s['source_id'] for s in active_sources]
         
+        if not active_source_ids:
+            return {'vessels': []}
+        
+        filter_query = {'source_ids': {'$in': active_source_ids}}
+        
+        # Build OR query for MMSI, name, and callsign
+        or_conditions = []
         if query.mmsi:
-            filter_query['mmsi'] = {'$regex': query.mmsi, '$options': 'i'}
+            or_conditions.append({'mmsi': {'$regex': query.mmsi, '$options': 'i'}})
         if query.vessel_name:
-            filter_query['name'] = {'$regex': query.vessel_name, '$options': 'i'}
+            or_conditions.append({'name': {'$regex': query.vessel_name, '$options': 'i'}})
+            or_conditions.append({'callsign': {'$regex': query.vessel_name, '$options': 'i'}})
         if query.ship_type is not None:
             filter_query['ship_type'] = query.ship_type
         
-        vessels = await db.vessels.find(filter_query).limit(100).to_list(100)
+        if or_conditions:
+            filter_query['$or'] = or_conditions
+        
+        vessels = await db.vessels.find(filter_query).limit(500).to_list(500)
         serialized_vessels = [serialize_doc(v) for v in vessels]
         
         return {'vessels': serialized_vessels}
