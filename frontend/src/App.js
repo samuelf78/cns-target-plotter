@@ -701,6 +701,17 @@ function App() {
                 </div>
               </CardHeader>
               <CardContent>
+                {sources.length > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full mb-3"
+                    onClick={disableAllSources}
+                  >
+                    <PowerOff size={16} className="mr-2" />
+                    Disable All Sources
+                  </Button>
+                )}
                 <ScrollArea className="h-96">
                   {sources.length === 0 ? (
                     <p className="text-center text-gray-400 py-4">No data sources</p>
