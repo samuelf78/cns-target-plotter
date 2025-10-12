@@ -470,15 +470,25 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     
     def serial_stream_handler():
         try:
+            logger.info(f"Opening serial port: {config.serial_port} at {config.baudrate} baud")
             ser = serial.Serial(config.serial_port, config.baudrate, timeout=1)
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
-            while stream_id in active_streams:
+            logger.info(f"Serial port opened: {config.serial_port}")
+            
+            while source_id in active_streams:
                 try:
                     line = ser.readline().decode('utf-8', errors='ignore').strip()
                     if line:
-                        loop.run_until_complete(process_ais_message(line, source='serial'))
+                        loop.run_until_complete(process_ais_message(line, source=f'serial:{config.serial_port}', source_id=source_id))
+                        loop.run_until_complete(db.sources.update_one(
+                            {'source_id': source_id},
+                            {
+                                '$inc': {'message_count': 1},
+                                '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+                            }
+                        ))
                 except Exception as e:
                     logger.error(f"Serial read error: {e}")
             ser.close()
