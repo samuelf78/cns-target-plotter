@@ -105,6 +105,16 @@ class SearchQuery(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
 
+class DataSource(BaseModel):
+    source_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    source_type: str  # tcp, udp, serial, file
+    name: str
+    config: Dict[str, Any]
+    status: str = "active"  # active, inactive
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    last_message: Optional[datetime] = None
+    message_count: int = 0
+
 # Helper functions
 def serialize_doc(doc):
     """Convert MongoDB document to JSON-serializable dict"""
