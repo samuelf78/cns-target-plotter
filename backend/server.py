@@ -410,19 +410,36 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     
     def tcp_stream_handler():
         try:
+            logger.info(f"Connecting to TCP stream: {config.host}:{config.port}")
             conn = TCPConnection(config.host, port=config.port)
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
+            logger.info(f"TCP stream connected: {config.host}:{config.port}")
+            
             for msg in conn:
-                if stream_id not in active_streams:
+                if source_id not in active_streams:
+                    logger.info(f"TCP stream {source_id} stopped")
                     break
                 try:
-                    loop.run_until_complete(process_ais_message(msg.decode(), source='tcp'))
+                    loop.run_until_complete(process_ais_message(msg.decode(), source=f'tcp:{config.host}:{config.port}', source_id=source_id))
+                    # Update source message count
+                    loop.run_until_complete(db.sources.update_one(
+                        {'source_id': source_id},
+                        {
+                            '$inc': {'message_count': 1},
+                            '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+                        }
+                    ))
                 except Exception as e:
                     logger.error(f"Error processing TCP message: {e}")
         except Exception as e:
-            logger.error(f"TCP stream error: {e}")
+            logger.error(f"TCP stream error for {config.host}:{config.port} - {e}")
+            # Mark source as inactive on error
+            asyncio.run(db.sources.update_one(
+                {'source_id': source_id},
+                {'$set': {'status': 'error', 'error_message': str(e)}}
+            ))
     
     def udp_stream_handler():
         try:
