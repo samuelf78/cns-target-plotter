@@ -5,7 +5,7 @@ import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import io from 'socket.io-client';
-import { Upload, Radio, Wifi, WifiOff, Search, Filter, Play, Pause, Clock, Ship, Anchor, MapPin, Settings, X } from 'lucide-react';
+import { Upload, Radio, Wifi, WifiOff, Search, Filter, Play, Pause, Clock, Ship, Anchor, MapPin, Settings, X, Trash2, Power, PowerOff, ChevronDown, ChevronRight, Database } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select';
@@ -14,6 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs';
 import { Badge } from './components/ui/badge';
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './components/ui/dialog';
+import { ScrollArea } from './components/ui/scroll-area';
+import { Switch } from './components/ui/switch';
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -27,11 +30,24 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Custom ship icon
-const createShipIcon = (heading) => {
+// Create direction arrow icon with color
+const createArrowIcon = (heading, positionCount) => {
+  let color = '#ef4444'; // red - 1 position
+  if (positionCount > 2) {
+    color = '#22c55e'; // green - more than 2
+  } else if (positionCount === 2) {
+    color = '#eab308'; // yellow - 2 positions
+  }
+  
+  const rotation = heading || 0;
+  
   return L.divIcon({
-    html: `<div style="transform: rotate(${heading || 0}deg); font-size: 24px; color: #3b82f6;">⛵</div>`,
-    className: 'custom-ship-icon',
+    html: `<div style="transform: rotate(${rotation}deg); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5">
+        <path d="M12 2 L2 22 L12 18 L22 22 Z"/>
+      </svg>
+    </div>`,
+    className: 'custom-arrow-icon',
     iconSize: [30, 30],
     iconAnchor: [15, 15]
   });
@@ -51,11 +67,15 @@ function App() {
   const [vessels, setVessels] = useState([]);
   const [selectedVessel, setSelectedVessel] = useState(null);
   const [vesselTrack, setVesselTrack] = useState([]);
+  const [vesselHistory, setVesselHistory] = useState(null);
+  const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+  const [expandedFields, setExpandedFields] = useState({});
   const [mapProvider, setMapProvider] = useState('osm');
   const [mapCenter, setMapCenter] = useState([37.7749, -122.4194]);
   const [mapZoom, setMapZoom] = useState(8);
   const [wsConnected, setWsConnected] = useState(false);
-  const [activeStreams, setActiveStreams] = useState({});
+  const [sources, setSources] = useState([]);
+  const [showSourceManager, setShowSourceManager] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
@@ -75,8 +95,8 @@ function App() {
   useEffect(() => {
     loadVessels();
     loadRecentPositions();
+    loadSources();
     connectWebSocket();
-    loadActiveStreams();
     loadSerialPorts();
     
     return () => {
@@ -155,21 +175,21 @@ function App() {
     }
   };
 
+  const loadSources = async () => {
+    try {
+      const response = await axios.get(`${API}/sources`);
+      setSources(response.data.sources || []);
+    } catch (error) {
+      console.error('Error loading sources:', error);
+    }
+  };
+
   const loadSerialPorts = async () => {
     try {
       const response = await axios.get(`${API}/serial/ports`);
       setSerialPorts(response.data.ports || []);
     } catch (error) {
       console.error('Error loading serial ports:', error);
-    }
-  };
-
-  const loadActiveStreams = async () => {
-    try {
-      const response = await axios.get(`${API}/stream/active`);
-      setActiveStreams(response.data.streams || {});
-    } catch (error) {
-      console.error('Error loading active streams:', error);
     }
   };
 
@@ -216,6 +236,7 @@ function App() {
         toast.success(`Processed ${processed} messages${errors > 0 ? ` (${errors} errors)` : ''}`);
         await loadVessels();
         await loadRecentPositions();
+        await loadSources();
       } else {
         toast.warning('No valid AIS messages found in file');
       }
@@ -240,20 +261,30 @@ function App() {
       
       const response = await axios.post(`${API}/stream/start`, config);
       toast.success(`${streamType.toUpperCase()} stream started`);
-      await loadActiveStreams();
+      await loadSources();
       setShowConnectionPanel(false);
     } catch (error) {
       toast.error('Failed to start stream');
     }
   };
 
-  const stopStream = async (streamId) => {
+  const toggleSource = async (sourceId) => {
     try {
-      await axios.post(`${API}/stream/stop/${streamId}`);
-      toast.success('Stream stopped');
-      await loadActiveStreams();
+      const response = await axios.patch(`${API}/sources/${sourceId}/toggle`);
+      toast.success(`Source ${response.data.status}`);
+      await loadSources();
     } catch (error) {
-      toast.error('Failed to stop stream');
+      toast.error('Failed to toggle source');
+    }
+  };
+
+  const deleteSource = async (sourceId) => {
+    try {
+      await axios.delete(`${API}/sources/${sourceId}`);
+      toast.success('Source removed');
+      await loadSources();
+    } catch (error) {
+      toast.error('Failed to remove source');
     }
   };
 
@@ -277,6 +308,17 @@ function App() {
       }
     } catch (error) {
       console.error('Error loading vessel details:', error);
+    }
+  };
+
+  const loadVesselHistory = async (mmsi) => {
+    try {
+      const response = await axios.get(`${API}/history/${mmsi}`);
+      setVesselHistory(response.data);
+      setShowHistoryDialog(true);
+    } catch (error) {
+      console.error('Error loading vessel history:', error);
+      toast.error('Failed to load vessel history');
     }
   };
 
@@ -308,6 +350,18 @@ function App() {
       default:
         return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
     }
+  };
+
+  const getPositionCount = (vessel) => {
+    // This would ideally come from the backend, but we'll estimate
+    return vessel.position_count || 1;
+  };
+
+  const toggleFieldExpansion = (field) => {
+    setExpandedFields(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
   };
 
   return (
@@ -347,6 +401,16 @@ function App() {
             >
               <Radio size={16} className="mr-2" />
               Stream
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowSourceManager(!showSourceManager)}
+              data-testid="source-manager-button"
+            >
+              <Database size={16} className="mr-2" />
+              Sources ({sources.length})
             </Button>
             
             <input
@@ -473,11 +537,13 @@ function App() {
               {vessels.map((vessel) => {
                 if (!vessel.last_position?.lat || !vessel.last_position?.lon) return null;
                 
+                const posCount = getPositionCount(vessel);
+                
                 return (
                   <Marker
                     key={vessel.mmsi}
                     position={[vessel.last_position.lat, vessel.last_position.lon]}
-                    icon={createShipIcon(vessel.last_position.heading)}
+                    icon={createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount)}
                   >
                     <Popup>
                       <div className="vessel-popup">
@@ -492,6 +558,13 @@ function App() {
                           <p><strong>Course:</strong> {vessel.last_position.course}°</p>
                         )}
                         {vessel.destination && <p><strong>Destination:</strong> {vessel.destination}</p>}
+                        <Button 
+                          size="sm" 
+                          className="mt-2 w-full"
+                          onClick={() => loadVesselHistory(vessel.mmsi)}
+                        >
+                          View Full History
+                        </Button>
                       </div>
                     </Popup>
                   </Marker>
@@ -591,30 +664,157 @@ function App() {
                 >
                   Start Stream
                 </Button>
-                
-                {/* Active Streams */}
-                {Object.keys(activeStreams).length > 0 && (
-                  <div className="active-streams mt-4">
-                    <h4 className="text-sm font-semibold mb-2">Active Streams</h4>
-                    {Object.entries(activeStreams).map(([id, type]) => (
-                      <div key={id} className="stream-item">
-                        <span>{type.toUpperCase()}</span>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => stopStream(id)}
-                        >
-                          Stop
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Source Manager Panel */}
+        {showSourceManager && (
+          <div className="source-manager-panel">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Data Source Manager</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSourceManager(false)}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  {sources.length === 0 ? (
+                    <p className="text-center text-gray-400 py-4">No data sources</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {sources.map(source => (
+                        <div key={source.source_id} className="source-item">
+                          <div className="source-info">
+                            <div className="source-name">{source.name}</div>
+                            <div className="source-meta">
+                              <span className="source-type">{source.source_type.toUpperCase()}</span>
+                              <span className="source-count">{source.message_count || 0} msgs</span>
+                            </div>
+                          </div>
+                          <div className="source-controls">
+                            <Switch
+                              checked={source.status === 'active'}
+                              onCheckedChange={() => toggleSource(source.source_id)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteSource(source.source_id)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
               </CardContent>
             </Card>
           </div>
         )}
       </div>
+
+      {/* History Dialog */}
+      <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>
+              Vessel History - MMSI: {vesselHistory?.mmsi}
+            </DialogTitle>
+          </DialogHeader>
+          {vesselHistory && (
+            <ScrollArea className="h-[600px] pr-4">
+              <div className="space-y-4">
+                {/* Summary */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Summary</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>Position Records: {vesselHistory.position_count}</p>
+                    <p>Total Messages: {vesselHistory.message_count}</p>
+                  </CardContent>
+                </Card>
+
+                {/* Vessel Info */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Vessel Information</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 text-sm">
+                      {Object.entries(vesselHistory.vessel || {}).map(([key, value]) => {
+                        if (key === '_id' || key === 'last_position' || key === 'track') return null;
+                        return (
+                          <div key={key} className="flex justify-between">
+                            <span className="font-semibold">{key}:</span>
+                            <span>{String(value)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Positions */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleFieldExpansion('positions')}>
+                      <CardTitle className="text-base">Position History ({vesselHistory.positions.length})</CardTitle>
+                      {expandedFields.positions ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </div>
+                  </CardHeader>
+                  {expandedFields.positions && (
+                    <CardContent>
+                      <div className="space-y-2 max-h-60 overflow-y-auto text-xs">
+                        {vesselHistory.positions.slice(0, 50).map((pos, idx) => (
+                          <div key={idx} className="border-b pb-1">
+                            <p><strong>Time:</strong> {pos.timestamp}</p>
+                            <p><strong>Pos:</strong> {pos.lat?.toFixed(6)}, {pos.lon?.toFixed(6)}</p>
+                            <p><strong>Speed:</strong> {pos.speed} kts, <strong>Course:</strong> {pos.course}°</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Messages */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex justify-between items-center cursor-pointer" onClick={() => toggleFieldExpansion('messages')}>
+                      <CardTitle className="text-base">All Messages ({vesselHistory.messages.length})</CardTitle>
+                      {expandedFields.messages ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                    </div>
+                  </CardHeader>
+                  {expandedFields.messages && (
+                    <CardContent>
+                      <div className="space-y-2 max-h-60 overflow-y-auto text-xs">
+                        {vesselHistory.messages.slice(0, 100).map((msg, idx) => (
+                          <div key={idx} className="border-b pb-1">
+                            <p><strong>Type {msg.message_type}:</strong> {msg.timestamp}</p>
+                            <p className="text-gray-400 truncate">{msg.raw}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
