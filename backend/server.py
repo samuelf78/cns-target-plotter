@@ -345,7 +345,8 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'dimension_d': decoded.get('to_starboard'),
                 'destination': decoded.get('destination', '').strip(),
                 'eta': str(decoded.get('eta', '')),
-                'last_seen': timestamp.isoformat()
+                'last_seen': timestamp.isoformat(),
+                'country': get_mmsi_country(mmsi)
             }
             
             await db.vessels.update_one(
