@@ -277,24 +277,34 @@ function App() {
 
   const selectVessel = async (vessel) => {
     setSelectedVessel(vessel);
+    setLoadingTrack(true);
     
-    // Load vessel details and track
+    // Load vessel track (all historic positions)
     try {
-      const response = await axios.get(`${API}/vessel/${vessel.mmsi}`);
-      const vesselData = response.data;
+      const response = await axios.get(`${API}/track/${vessel.mmsi}`);
+      const trackData = response.data;
       
-      if (vesselData.track && vesselData.track.length > 0) {
-        setVesselTrack(vesselData.track);
+      if (trackData.track && trackData.track.length > 0) {
+        setVesselTrack(trackData.track);
         
-        // Center map on vessel
-        const lastPos = vesselData.track[0];
+        // Center map on vessel's last position
+        const lastPos = trackData.track[0];
         if (lastPos.lat && lastPos.lon) {
           setMapCenter([lastPos.lat, lastPos.lon]);
           setMapZoom(12);
         }
+        
+        toast.success(`Loaded ${trackData.count} positions for ${vessel.name || vessel.mmsi}`);
+      } else {
+        setVesselTrack([]);
+        toast.info('No track history available');
       }
     } catch (error) {
-      console.error('Error loading vessel details:', error);
+      console.error('Error loading vessel track:', error);
+      setVesselTrack([]);
+      toast.error('Failed to load vessel track');
+    } finally {
+      setLoadingTrack(false);
     }
   };
 
