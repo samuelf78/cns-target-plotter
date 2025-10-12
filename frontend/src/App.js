@@ -242,8 +242,11 @@ function App() {
       const response = await axios.patch(`${API}/sources/${sourceId}/toggle`);
       toast.success(`Source ${response.data.status}`);
       await loadSources();
-      await loadVessels();
-      await loadRecentPositions();
+      
+      // Debounce vessel reload to avoid sluggishness
+      setTimeout(async () => {
+        await loadVessels();
+      }, 500);
     } catch (error) {
       toast.error('Failed to toggle source');
     }
