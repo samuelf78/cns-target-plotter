@@ -323,6 +323,11 @@ function App() {
   };
 
   const handleSearch = async () => {
+    if (!searchMMSI && !searchName) {
+      toast.warning('Please enter MMSI, vessel name, or callsign to search');
+      return;
+    }
+    
     try {
       const response = await axios.post(`${API}/search`, {
         mmsi: searchMMSI || undefined,
@@ -331,6 +336,8 @@ function App() {
       setVessels(response.data.vessels || []);
       if (response.data.vessels.length === 0) {
         toast.info('No vessels found matching your search');
+      } else {
+        toast.success(`Found ${response.data.vessels.length} vessel(s)`);
       }
     } catch (error) {
       console.error('Search error:', error);
