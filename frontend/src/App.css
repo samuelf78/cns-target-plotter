@@ -336,6 +336,21 @@ body {
   margin-bottom: 0.5rem;
 }
 
+/* History Dialog */
+.vessel-popup button {
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+/* Dialog Overlay - Ensure dialogs appear on top */
+[role="dialog"] {
+  z-index: 3000 !important;
+}
+
+[data-radix-portal] {
+  z-index: 3000 !important;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .sidebar {
