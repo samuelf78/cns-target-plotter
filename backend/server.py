@@ -618,6 +618,26 @@ async def get_active_vessels(limit: int = 1000):
         logger.error(f"Error loading active vessels: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/database/clear")
+async def clear_database():
+    """Clear all vessel, position, and message data (keep sources)"""
+    try:
+        vessels_deleted = await db.vessels.delete_many({})
+        positions_deleted = await db.positions.delete_many({})
+        messages_deleted = await db.messages.delete_many({})
+        
+        logger.info(f"Database cleared: {vessels_deleted.deleted_count} vessels, {positions_deleted.deleted_count} positions, {messages_deleted.deleted_count} messages")
+        
+        return {
+            'status': 'cleared',
+            'vessels_deleted': vessels_deleted.deleted_count,
+            'positions_deleted': positions_deleted.deleted_count,
+            'messages_deleted': messages_deleted.deleted_count
+        }
+    except Exception as e:
+        logger.error(f"Error clearing database: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/serial/ports")
 async def list_serial_ports():
     """List available serial ports"""
