@@ -728,7 +728,14 @@ function App() {
                     
                     {vesselSources.length > 0 && (
                       <>
-                        <div className="info-section-title">Data Sources</div>
+                        <div className="info-section-title">
+                          Data Sources {vesselSources.length > 1 && `(${vesselSources.length})`}
+                        </div>
+                        {vesselSources.length > 1 && (
+                          <div className="info-note">
+                            ℹ️ Data merged from multiple sources in chronological order
+                          </div>
+                        )}
                         {vesselSources.map((source, idx) => (
                           <div key={idx} className="info-row">
                             <span className="info-label">{source.source_type.toUpperCase()}:</span>
