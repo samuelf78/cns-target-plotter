@@ -580,6 +580,44 @@ async def delete_source(source_id: str):
         logger.error(f"Error deleting source: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/sources/disable-all")
+async def disable_all_sources():
+    """Disable all data sources"""
+    try:
+        # Stop all active streams
+        for stream_id in list(active_streams.keys()):
+            del active_streams[stream_id]
+        
+        # Disable all sources
+        await db.sources.update_many({}, {'$set': {'status': 'inactive'}})
+        
+        return {'status': 'all_disabled', 'count': await db.sources.count_documents({})}
+    except Exception as e:
+        logger.error(f"Error disabling all sources: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/vessels/active")
+async def get_active_vessels(limit: int = 1000):
+    """Get vessels from active sources only"""
+    try:
+        # Get active source IDs
+        active_sources = await db.sources.find({'status': 'active'}).to_list(100)
+        active_source_ids = [s['source_id'] for s in active_sources]
+        
+        if not active_source_ids:
+            return {'vessels': []}
+        
+        # Get vessels that have at least one active source
+        vessels = await db.vessels.find({
+            'source_ids': {'$in': active_source_ids}
+        }).sort('last_seen', -1).limit(limit).to_list(limit)
+        
+        serialized_vessels = [serialize_doc(v) for v in vessels]
+        return {'vessels': serialized_vessels}
+    except Exception as e:
+        logger.error(f"Error loading active vessels: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/serial/ports")
 async def list_serial_ports():
     """List available serial ports"""
