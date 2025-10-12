@@ -368,7 +368,27 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 @api_router.post("/stream/start")
 async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     """Start TCP/UDP/Serial stream"""
-    stream_id = str(uuid.uuid4())
+    source_id = str(uuid.uuid4())
+    
+    # Create source record
+    source_name = f"{config.stream_type.upper()}: "
+    if config.stream_type in ['tcp', 'udp']:
+        source_name += f"{config.host}:{config.port}"
+    else:
+        source_name += config.serial_port
+    
+    source_doc = {
+        'source_id': source_id,
+        'source_type': config.stream_type,
+        'name': source_name,
+        'config': config.dict(),
+        'status': 'active',
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'message_count': 0
+    }
+    await db.sources.insert_one(source_doc)
+    
+    stream_id = source_id
     
     def tcp_stream_handler():
         try:
