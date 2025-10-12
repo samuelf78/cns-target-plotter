@@ -593,11 +593,11 @@ function App() {
                 );
               })}
               
-              {/* Selected Vessel Track - Dark Blue Trail */}
+              {/* Selected Vessel Track - Dark Blue Trail (chronologically ordered) */}
               {selectedVessel && vesselTrack.length >= 1 && (
                 <Polyline
                   positions={vesselTrack
-                    .filter(p => p.lat && p.lon)
+                    .filter(p => p.lat && p.lon && p.lat !== 0 && p.lon !== 0)
                     .map(p => [p.lat, p.lon])}
                   color="#1e40af"
                   weight={3}
