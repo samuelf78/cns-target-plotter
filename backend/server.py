@@ -358,7 +358,7 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
             line = line.strip()
             if line and (line.startswith('!') or line.startswith('$')):
                 try:
-                    await process_ais_message(line, source=f'file:{file.filename}')
+                    await process_ais_message(line, source=f'file:{file.filename}', source_id=source_id)
                     processed += 1
                 except Exception as e:
                     errors += 1
