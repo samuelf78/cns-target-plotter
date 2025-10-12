@@ -420,9 +420,8 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     logger.info(f"TCP stream {source_id} stopped")
                     break
                 try:
-                    # msg is already an AIS sentence object from pyais
-                    # Get the raw string
-                    raw_msg = str(msg)
+                    # msg is an AISSentence object with .raw attribute (bytes)
+                    raw_msg = msg.raw.decode('utf-8', errors='ignore')
                     
                     # Process synchronously without async
                     decoded_obj = decode(raw_msg)
