@@ -511,8 +511,8 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     logger.info(f"UDP stream {source_id} stopped")
                     break
                 try:
-                    decoded_msg = msg.decode()
-                    decoded_obj = decode(decoded_msg)
+                    raw_msg = str(msg)
+                    decoded_obj = decode(raw_msg)
                     if decoded_obj:
                         decoded = decoded_obj.asdict()
                         mmsi = str(decoded.get('mmsi', 'unknown'))
