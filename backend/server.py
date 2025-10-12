@@ -863,13 +863,21 @@ async def get_vessels(limit: int = 100):
 
 @api_router.get("/vessel/{mmsi}")
 async def get_vessel(mmsi: str):
-    """Get vessel details by MMSI"""
+    """Get vessel details by MMSI - combines data from all sources"""
     try:
         vessel = await db.vessels.find_one({'mmsi': mmsi})
         if vessel:
             vessel = serialize_doc(vessel)
             
-            # Get recent positions
+            # Get the absolute latest position across all sources
+            latest_position = await db.positions.find_one(
+                {'mmsi': mmsi},
+                sort=[('timestamp', -1)]
+            )
+            if latest_position:
+                vessel['last_position'] = serialize_doc(latest_position)
+            
+            # Get recent positions sorted by timestamp (newest first)
             positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).limit(100).to_list(100)
             positions = [serialize_doc(p) for p in positions]
             
