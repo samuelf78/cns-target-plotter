@@ -523,7 +523,7 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                             'mmsi': mmsi,
                             'timestamp': timestamp.isoformat(),
                             'message_type': msg_type,
-                            'raw': decoded_msg,
+                            'raw': raw_msg,
                             'decoded': decoded,
                             'source': f'udp:{config.host}:{config.port}',
                             'source_id': source_id
