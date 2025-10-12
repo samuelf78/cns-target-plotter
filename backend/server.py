@@ -510,7 +510,7 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     logger.info(f"UDP stream {source_id} stopped")
                     break
                 try:
-                    raw_msg = str(msg)
+                    raw_msg = msg.raw.decode('utf-8', errors='ignore')
                     decoded_obj = decode(raw_msg)
                     if decoded_obj:
                         decoded = decoded_obj.asdict()
