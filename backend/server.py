@@ -443,15 +443,26 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     
     def udp_stream_handler():
         try:
+            logger.info(f"Starting UDP receiver: {config.host}:{config.port}")
             receiver = UDPReceiver(config.host, port=config.port)
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
             
+            logger.info(f"UDP receiver started: {config.host}:{config.port}")
+            
             for msg in receiver:
-                if stream_id not in active_streams:
+                if source_id not in active_streams:
+                    logger.info(f"UDP stream {source_id} stopped")
                     break
                 try:
-                    loop.run_until_complete(process_ais_message(msg.decode(), source='udp'))
+                    loop.run_until_complete(process_ais_message(msg.decode(), source=f'udp:{config.host}:{config.port}', source_id=source_id))
+                    loop.run_until_complete(db.sources.update_one(
+                        {'source_id': source_id},
+                        {
+                            '$inc': {'message_count': 1},
+                            '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+                        }
+                    ))
                 except Exception as e:
                     logger.error(f"Error processing UDP message: {e}")
         except Exception as e:
