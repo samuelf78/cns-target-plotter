@@ -30,6 +30,23 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+// Check if MMSI is a base station / shore station
+const isBaseStation = (mmsi) => {
+  if (!mmsi) return false;
+  // Base stations typically start with 00 (e.g., 002..., 003...)
+  return mmsi.startsWith('00');
+};
+
+// Create blue square icon for base stations
+const createBaseStationIcon = () => {
+  return L.divIcon({
+    html: `<div style="width: 16px; height: 16px; background-color: #3b82f6; border: 2px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
+    className: 'custom-base-station-icon',
+    iconSize: [16, 16],
+    iconAnchor: [8, 8]
+  });
+};
+
 // Create direction arrow icon with color
 const createArrowIcon = (heading, positionCount) => {
   let color = '#ef4444'; // red - 1 position
