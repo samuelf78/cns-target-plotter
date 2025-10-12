@@ -699,33 +699,30 @@ async def disable_all_sources():
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/vessels/active")
-async def get_active_vessels(limit: int = 1000):
+async def get_active_vessels(limit: int = 5000, skip: int = 0):
     """Get vessels from active sources only"""
     try:
         # Get active source IDs
         active_sources = await db.sources.find({'status': 'active'}).to_list(100)
         active_source_ids = [s['source_id'] for s in active_sources]
         
-        logger.info(f"Active sources: {len(active_source_ids)}, IDs: {active_source_ids}")
-        
         if not active_source_ids:
-            return {'vessels': []}
+            return {'vessels': [], 'total': 0}
         
-        # Get vessels that have at least one active source
+        # Get total count
+        total = await db.vessels.count_documents({
+            'source_ids': {'$in': active_source_ids}
+        })
+        
+        # Get vessels that have at least one active source (optimized - don't enrich position count here)
         vessels = await db.vessels.find({
             'source_ids': {'$in': active_source_ids}
-        }).sort('last_seen', -1).limit(limit).to_list(limit)
+        }).sort('last_seen', -1).skip(skip).limit(limit).to_list(limit)
         
-        logger.info(f"Found {len(vessels)} vessels from active sources")
-        
-        # Enrich with accurate position count
-        for vessel in vessels:
-            if vessel.get('mmsi'):
-                pos_count = await db.positions.count_documents({'mmsi': vessel['mmsi']})
-                vessel['position_count'] = pos_count
+        logger.info(f"Found {len(vessels)}/{total} vessels from {len(active_source_ids)} active sources")
         
         serialized_vessels = [serialize_doc(v) for v in vessels]
-        return {'vessels': serialized_vessels}
+        return {'vessels': serialized_vessels, 'total': total}
     except Exception as e:
         logger.error(f"Error loading active vessels: {e}")
         raise HTTPException(status_code=500, detail=str(e))
