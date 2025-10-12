@@ -4,7 +4,7 @@ import axios from "axios";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import io from 'socket.io-client';
+// Removed socket.io - using native WebSocket and polling
 import { Upload, Radio, Wifi, WifiOff, Search, Filter, Play, Pause, Clock, Ship, Anchor, MapPin, Settings, X, Trash2, Power, PowerOff, ChevronDown, ChevronRight, Database } from 'lucide-react';
 import { Button } from './components/ui/button';
 import { Input } from './components/ui/input';
