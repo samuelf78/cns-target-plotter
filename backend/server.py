@@ -604,6 +604,8 @@ async def get_active_vessels(limit: int = 1000):
         active_sources = await db.sources.find({'status': 'active'}).to_list(100)
         active_source_ids = [s['source_id'] for s in active_sources]
         
+        logger.info(f"Active sources: {len(active_source_ids)}, IDs: {active_source_ids}")
+        
         if not active_source_ids:
             return {'vessels': []}
         
@@ -611,6 +613,14 @@ async def get_active_vessels(limit: int = 1000):
         vessels = await db.vessels.find({
             'source_ids': {'$in': active_source_ids}
         }).sort('last_seen', -1).limit(limit).to_list(limit)
+        
+        logger.info(f"Found {len(vessels)} vessels from active sources")
+        
+        # Enrich with accurate position count
+        for vessel in vessels:
+            if vessel.get('mmsi'):
+                pos_count = await db.positions.count_documents({'mmsi': vessel['mmsi']})
+                vessel['position_count'] = pos_count
         
         serialized_vessels = [serialize_doc(v) for v in vessels]
         return {'vessels': serialized_vessels}
