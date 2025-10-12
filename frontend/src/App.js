@@ -109,14 +109,16 @@ function App() {
   }, []);
 
   const startPolling = () => {
-    // Poll for updates every 2 seconds
+    // Poll for vessel updates every 5 seconds (only if we have search results)
     pollIntervalRef.current = setInterval(async () => {
       try {
-        await loadRecentPositions();
+        if (vessels.length > 0) {
+          await loadRecentPositions();
+        }
       } catch (error) {
         console.error('Polling error:', error);
       }
-    }, 2000);
+    }, 5000);
     setWsConnected(true);
   };
 
