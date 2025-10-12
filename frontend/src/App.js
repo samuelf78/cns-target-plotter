@@ -94,6 +94,7 @@ function App() {
   const [mapZoom, setMapZoom] = useState(8);
   const [wsConnected, setWsConnected] = useState(false);
   const [sources, setSources] = useState([]);
+  const [vesselSources, setVesselSources] = useState([]);
   const [showSourceManager, setShowSourceManager] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
