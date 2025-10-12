@@ -201,6 +201,16 @@ body {
 .leaflet-container {
   background: #0a1628;
   font-family: 'Space Grotesk', sans-serif;
+  z-index: 1;
+}
+
+/* Leaflet Popup */
+.leaflet-popup {
+  z-index: 1500 !important;
+}
+
+.leaflet-popup-pane {
+  z-index: 1500 !important;
 }
 
 .custom-ship-icon {
