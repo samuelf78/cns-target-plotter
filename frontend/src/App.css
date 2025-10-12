@@ -262,6 +262,49 @@ body {
   animation: slideIn 0.3s ease;
 }
 
+/* Vessel Info Panel */
+.vessel-info-panel {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 350px;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+}
+
+.info-row {
+  display: flex;
+  justify-between;
+  align-items: start;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3);
+}
+
+.info-label {
+  font-weight: 600;
+  color: #94a3b8;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+
+.info-value {
+  color: #e2e8f0;
+  text-align: right;
+  word-break: break-word;
+}
+
+.info-section-title {
+  font-weight: 700;
+  color: #ffffff;
+  font-size: 0.9rem;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #3b82f6;
+}
+
 .source-item {
   display: flex;
   justify-content: space-between;
