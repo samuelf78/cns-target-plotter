@@ -616,6 +616,38 @@ async def get_vessel_track(mmsi: str, limit: int = 1000):
         logger.error(f"Error loading track for {mmsi}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load track: {str(e)}")
 
+@api_router.get("/history/{mmsi}")
+async def get_vessel_history(mmsi: str):
+    """Get complete historical data for an MMSI"""
+    try:
+        # Get vessel info
+        vessel = await db.vessels.find_one({'mmsi': mmsi})
+        if not vessel:
+            raise HTTPException(status_code=404, detail="Vessel not found")
+        
+        # Get all positions
+        positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).to_list(10000)
+        
+        # Get all messages
+        messages = await db.messages.find({'mmsi': mmsi}).sort('timestamp', -1).to_list(10000)
+        
+        # Serialize all data
+        result = {
+            'mmsi': mmsi,
+            'vessel': serialize_doc(vessel),
+            'positions': [serialize_doc(p) for p in positions],
+            'messages': [serialize_doc(m) for m in messages],
+            'position_count': len(positions),
+            'message_count': len(messages)
+        }
+        
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error loading history for {mmsi}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to load history: {str(e)}")
+
 @api_router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     """WebSocket for real-time updates"""
