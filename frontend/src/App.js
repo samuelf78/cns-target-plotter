@@ -91,50 +91,32 @@ function App() {
   
   const fileInputRef = useRef(null);
   const wsRef = useRef(null);
+  const pollIntervalRef = useRef(null);
 
   useEffect(() => {
     loadVessels();
     loadRecentPositions();
     loadSources();
-    connectWebSocket();
+    startPolling();
     loadSerialPorts();
     
     return () => {
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
       }
     };
   }, []);
 
-  const connectWebSocket = () => {
-    try {
-      const socket = io(`${WS_URL}/api/ws`, {
-        transports: ['websocket', 'polling'],
-        reconnection: true
-      });
-      
-      socket.on('connect', () => {
-        setWsConnected(true);
-        toast.success('Live updates connected');
-      });
-      
-      socket.on('disconnect', () => {
-        setWsConnected(false);
-        toast.error('Live updates disconnected');
-      });
-      
-      socket.on('message', (data) => {
-        if (data.type === 'position') {
-          updateVesselPosition(data.data);
-        } else if (data.type === 'vessel_info') {
-          updateVesselInfo(data.data);
-        }
-      });
-      
-      wsRef.current = socket;
-    } catch (error) {
-      console.error('WebSocket connection error:', error);
-    }
+  const startPolling = () => {
+    // Poll for updates every 2 seconds
+    pollIntervalRef.current = setInterval(async () => {
+      try {
+        await loadRecentPositions();
+      } catch (error) {
+        console.error('Polling error:', error);
+      }
+    }, 2000);
+    setWsConnected(true);
   };
 
   const loadVessels = async () => {
