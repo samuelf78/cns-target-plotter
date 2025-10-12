@@ -211,20 +211,24 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'course': decoded.get('course'),
                 'heading': decoded.get('heading'),
                 'nav_status': decoded.get('status'),
+                'source_id': source_id
             }
             await db.positions.insert_one(position_doc)
             
             # Get position count
             pos_count = await db.positions.count_documents({'mmsi': mmsi})
             
-            # Update vessel last position
+            # Update vessel last position and add to sources list
             await db.vessels.update_one(
                 {'mmsi': mmsi},
-                {'$set': {
-                    'last_position': position_doc,
-                    'last_seen': timestamp.isoformat(),
-                    'position_count': pos_count
-                }},
+                {
+                    '$set': {
+                        'last_position': position_doc,
+                        'last_seen': timestamp.isoformat(),
+                        'position_count': pos_count
+                    },
+                    '$addToSet': {'source_ids': source_id}
+                },
                 upsert=True
             )
             
