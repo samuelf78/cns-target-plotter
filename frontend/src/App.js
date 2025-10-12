@@ -573,6 +573,131 @@ function App() {
           </div>
         </main>
 
+        {/* Floating Vessel Info Panel */}
+        {showVesselPanel && selectedVessel && (
+          <div className="vessel-info-panel">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle className="text-lg">
+                    {selectedVessel.name || `MMSI: ${selectedVessel.mmsi}`}
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowVesselPanel(false);
+                      setSelectedVessel(null);
+                      setVesselTrack([]);
+                    }}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <ScrollArea className="h-96">
+                  <div className="space-y-3 text-sm">
+                    <div className="info-row">
+                      <span className="info-label">MMSI:</span>
+                      <span className="info-value">{selectedVessel.mmsi}</span>
+                    </div>
+                    
+                    {selectedVessel.country && (
+                      <div className="info-row">
+                        <span className="info-label">Country:</span>
+                        <span className="info-value">{selectedVessel.country}</span>
+                      </div>
+                    )}
+                    
+                    {selectedVessel.callsign && (
+                      <div className="info-row">
+                        <span className="info-label">Callsign:</span>
+                        <span className="info-value">{selectedVessel.callsign}</span>
+                      </div>
+                    )}
+                    
+                    {selectedVessel.ship_type_text && (
+                      <div className="info-row">
+                        <span className="info-label">Ship Type:</span>
+                        <span className="info-value">{selectedVessel.ship_type_text}</span>
+                      </div>
+                    )}
+                    
+                    {selectedVessel.imo && (
+                      <div className="info-row">
+                        <span className="info-label">IMO:</span>
+                        <span className="info-value">{selectedVessel.imo}</span>
+                      </div>
+                    )}
+                    
+                    {selectedVessel.last_position && (
+                      <>
+                        <div className="info-section-title">Current Position</div>
+                        <div className="info-row">
+                          <span className="info-label">Latitude:</span>
+                          <span className="info-value">{selectedVessel.last_position.lat?.toFixed(6)}</span>
+                        </div>
+                        <div className="info-row">
+                          <span className="info-label">Longitude:</span>
+                          <span className="info-value">{selectedVessel.last_position.lon?.toFixed(6)}</span>
+                        </div>
+                        {selectedVessel.last_position.speed !== null && (
+                          <div className="info-row">
+                            <span className="info-label">Speed:</span>
+                            <span className="info-value">{selectedVessel.last_position.speed} knots</span>
+                          </div>
+                        )}
+                        {selectedVessel.last_position.course !== null && (
+                          <div className="info-row">
+                            <span className="info-label">Course:</span>
+                            <span className="info-value">{selectedVessel.last_position.course}\u00b0</span>
+                          </div>
+                        )}
+                        {selectedVessel.last_position.heading !== null && (
+                          <div className="info-row">
+                            <span className="info-label">Heading:</span>
+                            <span className="info-value">{selectedVessel.last_position.heading}\u00b0</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {selectedVessel.destination && (
+                      <div className="info-row">
+                        <span className="info-label">Destination:</span>
+                        <span className="info-value">{selectedVessel.destination}</span>
+                      </div>
+                    )}
+                    
+                    {selectedVessel.eta && (
+                      <div className="info-row">
+                        <span className="info-label">ETA:</span>
+                        <span className="info-value">{selectedVessel.eta}</span>
+                      </div>
+                    )}
+                    
+                    {vesselTrack.length > 0 && (
+                      <div className="info-row">
+                        <span className="info-label">Track Points:</span>
+                        <span className="info-value">{vesselTrack.length}</span>
+                      </div>
+                    )}
+                    
+                    <Button 
+                      className="w-full mt-4"
+                      onClick={() => loadVesselHistory(selectedVessel.mmsi)}
+                    >
+                      <Database size={16} className="mr-2" />
+                      View Full History
+                    </Button>
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Connection Panel */}
         {showConnectionPanel && (
           <div className="connection-panel">
