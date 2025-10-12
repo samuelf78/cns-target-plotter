@@ -829,12 +829,21 @@ async def get_recent_positions(limit: int = 100):
         raise HTTPException(status_code=500, detail=f"Failed to load positions: {str(e)}")
 
 @api_router.get("/track/{mmsi}")
-async def get_vessel_track(mmsi: str, limit: int = 1000):
+async def get_vessel_track(mmsi: str, limit: int = 10000):
     """Get vessel track history"""
     try:
-        positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).limit(limit).to_list(limit)
+        # Only get essential fields for performance
+        positions = await db.positions.find(
+            {'mmsi': mmsi},
+            {'lat': 1, 'lon': 1, 'timestamp': 1, 'speed': 1, 'course': 1, 'heading': 1}
+        ).sort('timestamp', -1).limit(limit).to_list(limit)
+        
         serialized_positions = [serialize_doc(p) for p in positions]
-        return {'mmsi': mmsi, 'track': serialized_positions}
+        return {
+            'mmsi': mmsi, 
+            'track': serialized_positions,
+            'count': len(serialized_positions)
+        }
     except Exception as e:
         logger.error(f"Error loading track for {mmsi}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load track: {str(e)}")
