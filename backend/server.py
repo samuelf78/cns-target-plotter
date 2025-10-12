@@ -195,7 +195,8 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             'message_type': msg_type,
             'raw': raw_message,
             'decoded': decoded,
-            'source': source
+            'source': source,
+            'source_id': source_id
         }
         await db.messages.insert_one(message_doc)
         
