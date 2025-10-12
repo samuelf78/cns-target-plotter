@@ -982,18 +982,31 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
 
 @api_router.get("/history/{mmsi}")
 async def get_vessel_history(mmsi: str):
-    """Get complete historical data for an MMSI"""
+    """Get complete historical data for an MMSI - properly merged from all sources"""
     try:
         # Get vessel info
         vessel = await db.vessels.find_one({'mmsi': mmsi})
         if not vessel:
             raise HTTPException(status_code=404, detail="Vessel not found")
         
-        # Get all positions
+        # Get all positions sorted chronologically (newest first for display)
         positions = await db.positions.find({'mmsi': mmsi}).sort('timestamp', -1).to_list(10000)
         
-        # Get all messages
+        # Get all messages sorted chronologically
         messages = await db.messages.find({'mmsi': mmsi}).sort('timestamp', -1).to_list(10000)
+        
+        # Count unique sources
+        position_sources = set()
+        for p in positions:
+            if p.get('source_id'):
+                position_sources.add(p['source_id'])
+        
+        message_sources = set()
+        for m in messages:
+            if m.get('source_id'):
+                message_sources.add(m['source_id'])
+        
+        all_sources = position_sources.union(message_sources)
         
         # Serialize all data
         result = {
@@ -1002,7 +1015,9 @@ async def get_vessel_history(mmsi: str):
             'positions': [serialize_doc(p) for p in positions],
             'messages': [serialize_doc(m) for m in messages],
             'position_count': len(positions),
-            'message_count': len(messages)
+            'message_count': len(messages),
+            'unique_sources': len(all_sources),
+            'source_ids': list(all_sources)
         }
         
         return result
