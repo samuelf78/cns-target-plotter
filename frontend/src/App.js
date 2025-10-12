@@ -554,30 +554,7 @@ function App() {
                     eventHandlers={{
                       click: () => selectVessel(vessel)
                     }}
-                  >
-                    <Popup>
-                      <div className="vessel-popup">
-                        <h3>{vessel.name || `MMSI: ${vessel.mmsi}`}</h3>
-                        <p><strong>MMSI:</strong> {vessel.mmsi}</p>
-                        {vessel.callsign && <p><strong>Callsign:</strong> {vessel.callsign}</p>}
-                        {vessel.ship_type_text && <p><strong>Type:</strong> {vessel.ship_type_text}</p>}
-                        {vessel.last_position.speed !== null && (
-                          <p><strong>Speed:</strong> {vessel.last_position.speed} knots</p>
-                        )}
-                        {vessel.last_position.course !== null && (
-                          <p><strong>Course:</strong> {vessel.last_position.course}°</p>
-                        )}
-                        {vessel.destination && <p><strong>Destination:</strong> {vessel.destination}</p>}
-                        <Button 
-                          size="sm" 
-                          className="mt-2 w-full"
-                          onClick={() => loadVesselHistory(vessel.mmsi)}
-                        >
-                          View Full History
-                        </Button>
-                      </div>
-                    </Popup>
-                  </Marker>
+                  />
                 );
               })}
               
