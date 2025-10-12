@@ -571,15 +571,15 @@ function App() {
                 );
               })}
               
-              {/* Selected Vessel Track - Light Blue Trail */}
-              {selectedVessel && vesselTrack.length > 1 && (
+              {/* Selected Vessel Track - Dark Blue Trail */}
+              {selectedVessel && vesselTrack.length >= 1 && (
                 <Polyline
                   positions={vesselTrack
                     .filter(p => p.lat && p.lon)
                     .map(p => [p.lat, p.lon])}
-                  color="#7dd3fc"
+                  color="#1e40af"
                   weight={3}
-                  opacity={0.8}
+                  opacity={0.9}
                 />
               )}
             </MapContainer>
