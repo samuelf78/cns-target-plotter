@@ -468,6 +468,62 @@ async def get_active_streams():
     """Get list of active streams"""
     return {'streams': active_streams}
 
+@api_router.get("/sources")
+async def get_sources():
+    """Get all data sources"""
+    try:
+        sources = await db.sources.find().sort('created_at', -1).to_list(100)
+        serialized_sources = [serialize_doc(s) for s in sources]
+        return {'sources': serialized_sources}
+    except Exception as e:
+        logger.error(f"Error loading sources: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/sources/{source_id}/toggle")
+async def toggle_source(source_id: str):
+    """Enable/disable a data source"""
+    try:
+        source = await db.sources.find_one({'source_id': source_id})
+        if not source:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        new_status = 'inactive' if source['status'] == 'active' else 'active'
+        
+        # If disabling a stream, stop it
+        if new_status == 'inactive' and source_id in active_streams:
+            del active_streams[source_id]
+        
+        await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'status': new_status}}
+        )
+        
+        return {'status': new_status}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error toggling source: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.delete("/sources/{source_id}")
+async def delete_source(source_id: str):
+    """Remove a data source"""
+    try:
+        # Stop stream if active
+        if source_id in active_streams:
+            del active_streams[source_id]
+        
+        result = await db.sources.delete_one({'source_id': source_id})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        return {'status': 'deleted'}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting source: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/serial/ports")
 async def list_serial_ports():
     """List available serial ports"""
