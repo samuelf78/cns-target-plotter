@@ -320,6 +320,16 @@ body {
   border: none !important;
 }
 
+.info-note {
+  background: rgba(59, 130, 246, 0.1);
+  color: #93c5fd;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  margin: 0.5rem 0;
+  border-left: 3px solid #3b82f6;
+}
+
 .source-item {
   display: flex;
   justify-content: space-between;
