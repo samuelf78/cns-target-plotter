@@ -327,6 +327,22 @@ function App() {
     } finally {
       setLoadingTrack(false);
     }
+    
+    // Load source information for this vessel
+    if (vessel.source_ids && vessel.source_ids.length > 0) {
+      try {
+        const allSources = await axios.get(`${API}/sources`);
+        const vesselSourceList = allSources.data.sources.filter(s => 
+          vessel.source_ids.includes(s.source_id)
+        );
+        setVesselSources(vesselSourceList);
+      } catch (error) {
+        console.error('Error loading vessel sources:', error);
+        setVesselSources([]);
+      }
+    } else {
+      setVesselSources([]);
+    }
   };
 
   const loadVesselHistory = async (mmsi) => {
