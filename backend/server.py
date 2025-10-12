@@ -317,6 +317,19 @@ async def root():
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
     """Upload and process AIS log file"""
     try:
+        # Create source record
+        source_id = str(uuid.uuid4())
+        source_doc = {
+            'source_id': source_id,
+            'source_type': 'file',
+            'name': file.filename,
+            'config': {'filename': file.filename},
+            'status': 'active',
+            'created_at': datetime.now(timezone.utc).isoformat(),
+            'message_count': 0
+        }
+        await db.sources.insert_one(source_doc)
+        
         content = await file.read()
         lines = content.decode('utf-8', errors='ignore').split('\n')
         
@@ -327,14 +340,24 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
             line = line.strip()
             if line and (line.startswith('!') or line.startswith('$')):
                 try:
-                    await process_ais_message(line, source='upload')
+                    await process_ais_message(line, source=f'file:{file.filename}')
                     processed += 1
                 except Exception as e:
                     errors += 1
                     logger.error(f"Error processing line: {e}")
         
+        # Update source with message count
+        await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {
+                'message_count': processed,
+                'last_message': datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        
         return {
             'status': 'success',
+            'source_id': source_id,
             'filename': file.filename,
             'processed': processed,
             'errors': errors
