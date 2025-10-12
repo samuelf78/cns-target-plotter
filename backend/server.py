@@ -213,10 +213,17 @@ async def process_ais_message(raw_message: str, source: str = "unknown"):
             }
             await db.positions.insert_one(position_doc)
             
+            # Get position count
+            pos_count = await db.positions.count_documents({'mmsi': mmsi})
+            
             # Update vessel last position
             await db.vessels.update_one(
                 {'mmsi': mmsi},
-                {'$set': {'last_position': position_doc, 'last_seen': timestamp.isoformat()}},
+                {'$set': {
+                    'last_position': position_doc,
+                    'last_seen': timestamp.isoformat(),
+                    'position_count': pos_count
+                }},
                 upsert=True
             )
             
