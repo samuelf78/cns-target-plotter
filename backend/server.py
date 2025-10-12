@@ -257,7 +257,10 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             
             await db.vessels.update_one(
                 {'mmsi': mmsi},
-                {'$set': vessel_doc},
+                {
+                    '$set': vessel_doc,
+                    '$addToSet': {'source_ids': source_id}
+                },
                 upsert=True
             )
             
