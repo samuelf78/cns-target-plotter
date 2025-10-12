@@ -132,28 +132,14 @@ function App() {
 
   const loadRecentPositions = async () => {
     try {
-      const response = await axios.get(`${API}/positions/recent?limit=100`);
-      const positions = response.data.positions || [];
+      // Load full vessels from active sources to ensure we have latest data
+      const response = await axios.get(`${API}/vessels/active?limit=1000`);
+      const vessels = response.data.vessels || [];
       
-      // Update vessels with positions
-      setVessels(prev => {
-        const updated = [...prev];
-        positions.forEach(pos => {
-          const idx = updated.findIndex(v => v.mmsi === pos.mmsi);
-          if (idx >= 0) {
-            updated[idx].last_position = pos;
-          } else {
-            updated.push({ mmsi: pos.mmsi, last_position: pos });
-          }
-        });
-        return updated;
-      });
+      // Update vessels state
+      setVessels(vessels);
     } catch (error) {
       console.error('Error loading positions:', error);
-      const errorMsg = error.response?.data?.detail || error.message;
-      if (errorMsg) {
-        toast.error(`Failed to load positions: ${errorMsg}`);
-      }
     }
   };
 
