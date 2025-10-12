@@ -279,6 +279,7 @@ function App() {
 
   const selectVessel = async (vessel) => {
     setSelectedVessel(vessel);
+    setShowVesselPanel(true);
     setLoadingTrack(true);
     
     // Load vessel track (all historic positions)
