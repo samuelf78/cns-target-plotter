@@ -122,7 +122,7 @@ function App() {
 
   const loadVessels = async () => {
     try {
-      const response = await axios.get(`${API}/vessels/active?limit=1000`);
+      const response = await axios.get(`${API}/vessels/active?limit=5000`);
       setVessels(response.data.vessels || []);
     } catch (error) {
       console.error('Error loading vessels:', error);
