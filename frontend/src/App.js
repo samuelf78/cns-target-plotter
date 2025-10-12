@@ -719,6 +719,25 @@ function App() {
                       </div>
                     )}
                     
+                    {isBaseStation(selectedVessel.mmsi) && (
+                      <div className="info-row">
+                        <span className="info-label">Station Type:</span>
+                        <span className="info-value badge-blue">Base Station</span>
+                      </div>
+                    )}
+                    
+                    {vesselSources.length > 0 && (
+                      <>
+                        <div className="info-section-title">Data Sources</div>
+                        {vesselSources.map((source, idx) => (
+                          <div key={idx} className="info-row">
+                            <span className="info-label">{source.source_type.toUpperCase()}:</span>
+                            <span className="info-value">{source.name}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                    
                     <Button 
                       className="w-full mt-4"
                       onClick={() => loadVesselHistory(selectedVessel.mmsi)}
