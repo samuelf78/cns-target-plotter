@@ -273,8 +273,23 @@ function App() {
       const response = await axios.patch(`${API}/sources/${sourceId}/toggle`);
       toast.success(`Source ${response.data.status}`);
       await loadSources();
+      await loadVessels();
+      await loadRecentPositions();
     } catch (error) {
       toast.error('Failed to toggle source');
+    }
+  };
+
+  const disableAllSources = async () => {
+    try {
+      const response = await axios.post(`${API}/sources/disable-all`);
+      toast.success(`All sources disabled (${response.data.count})`);
+      await loadSources();
+      setVessels([]);
+      setSelectedVessel(null);
+      setVesselTrack([]);
+    } catch (error) {
+      toast.error('Failed to disable all sources');
     }
   };
 
