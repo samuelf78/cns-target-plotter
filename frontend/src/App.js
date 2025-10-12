@@ -134,7 +134,7 @@ function App() {
   const loadRecentPositions = async () => {
     try {
       // Load full vessels from active sources to ensure we have latest data
-      const response = await axios.get(`${API}/vessels/active?limit=1000`);
+      const response = await axios.get(`${API}/vessels/active?limit=5000`);
       const vessels = response.data.vessels || [];
       
       // Update vessels state
