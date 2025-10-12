@@ -390,7 +390,8 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         elif msg_type == 24:  # Static Data Report
             vessel_doc = {
                 'mmsi': mmsi,
-                'last_seen': timestamp.isoformat()
+                'last_seen': timestamp.isoformat(),
+                'country': get_mmsi_country(mmsi)
             }
             
             if 'shipname' in decoded:
