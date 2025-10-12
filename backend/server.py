@@ -317,7 +317,8 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                     '$set': {
                         'last_position': position_doc,
                         'last_seen': timestamp.isoformat(),
-                        'position_count': pos_count
+                        'position_count': pos_count,
+                        'country': get_mmsi_country(mmsi)
                     },
                     '$addToSet': {'source_ids': source_id}
                 },
