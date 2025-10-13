@@ -343,3 +343,44 @@ agent_communication:
       - No console errors or UI issues
       
       ALL VDO VISUALIZATION REQUIREMENTS SUCCESSFULLY IMPLEMENTED AND TESTED!
+  - agent: "main"
+    message: |
+      🔧 FIXED CRITICAL REAL-TIME STREAMING ISSUE
+      
+      USER REPORTED: TCP stream connects but data not plotted in real-time. Data only appears
+      after toggling stream, which then stops the data flow.
+      
+      ROOT CAUSE IDENTIFIED:
+      - TCP and UDP stream handlers were NOT broadcasting data via WebSocket
+      - They used synchronous pymongo directly and skipped WebSocket broadcast
+      - Frontend never received real-time updates
+      - Data accumulated in DB but wasn't pushed to UI
+      - Toggling stream triggered a DB refresh, showing accumulated data
+      
+      FIXES APPLIED:
+      1. TCP Handler (lines 560-598):
+         - Removed synchronous pymongo code
+         - Now uses async process_ais_message() which broadcasts via WebSocket
+         - Added event loop to run async code from thread
+         - Now handles Type 4 VDO messages correctly (uses updated detection)
+      
+      2. UDP Handler (lines 600-638):
+         - Removed synchronous pymongo code
+         - Now uses async process_ais_message() which broadcasts via WebSocket
+         - Added event loop to run async code from thread
+         - Consistent with TCP handler approach
+      
+      3. Serial Handler:
+         - Already working correctly (was using process_ais_message)
+      
+      EXPECTED RESULTS:
+      - TCP/UDP stream data should now appear on map in real-time
+      - No need to toggle streams to see data
+      - WebSocket broadcasts position updates as they arrive
+      - Toggling should not break data flow
+      
+      NEEDS TESTING:
+      - Connect to TCP stream with live AIS data
+      - Verify vessels appear on map in real-time
+      - Verify no need to toggle to see data
+      - Test that toggling doesn't break the stream
