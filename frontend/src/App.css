@@ -340,6 +340,21 @@ body {
   border-left: 3px solid #3b82f6;
 }
 
+.source-item-expanded {
+  padding: 0.75rem;
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid #475569;
+  border-radius: 8px;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.source-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
 .source-item {
   display: flex;
   justify-content: space-between;
@@ -348,7 +363,8 @@ body {
   background: rgba(51, 65, 85, 0.5);
   border: 1px solid #475569;
   border-radius: 8px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  will-change: transform;
 }
 
 .source-item:hover {
