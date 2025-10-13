@@ -305,6 +305,17 @@ function App() {
     }
   };
 
+  const updateSpoofLimit = async (sourceId, limit) => {
+    try {
+      await axios.patch(`${API}/sources/${sourceId}/spoof-limit?spoof_limit_km=${limit}`);
+      toast.success(`Spoof limit updated to ${limit} km`);
+      await loadSources();
+      setEditingSpoofLimit(null);
+    } catch (error) {
+      toast.error('Failed to update spoof limit');
+    }
+  };
+
   const selectVessel = async (vessel) => {
     setSelectedVessel(vessel);
     setShowVesselPanel(true);
