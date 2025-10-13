@@ -57,6 +57,7 @@ manager = ConnectionManager()
 
 # Background stream controllers
 active_streams = {}
+main_event_loop = None
 
 # Models
 class VesselPosition(BaseModel):
