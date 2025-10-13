@@ -559,14 +559,14 @@ function App() {
 
   return (
     <div className="App">
-      <Toaster position="top-right" />
+      <Toaster position="bottom-right" />
       
       {/* Header */}
       <header className="nautical-header">
         <div className="header-content">
           <div className="logo-section">
             <Anchor className="logo-icon" size={32} />
-            <h1>AIS Maritime Tracker</h1>
+            <h1>CNS Systems Target Plotter</h1>
           </div>
           
           <div className="header-controls">
