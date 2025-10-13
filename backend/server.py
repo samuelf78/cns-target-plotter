@@ -280,6 +280,9 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         msg_type = decoded.get('msg_type', 0)
         timestamp = datetime.now(timezone.utc)
         
+        # Determine if VDO or VDM
+        is_vdo = raw_message.startswith('!AIVDO') or raw_message.startswith('$AIVDO')
+        
         # Store raw message
         message_doc = {
             'mmsi': mmsi,
@@ -288,7 +291,9 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             'raw': raw_message,
             'decoded': decoded,
             'source': source,
-            'source_id': source_id
+            'source_id': source_id,
+            'is_vdo': is_vdo,
+            'repeat_indicator': decoded.get('repeat', 0)
         }
         await db.messages.insert_one(message_doc)
         
