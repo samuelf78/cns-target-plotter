@@ -826,21 +826,25 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                 vdo_mmsi = vdo_pos.get('mmsi')
                 
                 # Get VDM positions from SAME source only
+                # Exclude VDO messages and only get VDMs with repeat_indicator <= 0
                 vdm_positions = await db.positions.find({
                     'is_vdo': {'$ne': True},
                     'source_id': source_id,
+                    'repeat_indicator': {'$lte': 0},  # Only direct messages, not repeated
                     'lat': {'$exists': True, '$ne': None, '$ne': 0},
                     'lon': {'$exists': True, '$ne': None, '$ne': 0}
                 }).to_list(10000)
                 
-                # Find furthest VDM within spoof limit
+                # Find furthest VDM within spoof limit (with repeat_indicator <= 0)
                 max_distance_within_limit = 0
                 
                 for vdm_pos in vdm_positions:
                     vdm_lat = vdm_pos.get('lat')
                     vdm_lon = vdm_pos.get('lon')
+                    repeat_ind = vdm_pos.get('repeat_indicator', 0)
                     
-                    if vdm_lat and vdm_lon:
+                    # Double-check: only valid VDMs (repeat_indicator <= 0)
+                    if vdm_lat and vdm_lon and repeat_ind <= 0:
                         # Calculate distance in km
                         lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
                         lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
@@ -852,7 +856,7 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                         c = 2 * math.asin(math.sqrt(a))
                         distance_km = 6371 * c
                         
-                        # Only consider VDMs within spoof limit
+                        # Only consider VDMs within spoof limit AND with repeat_indicator <= 0
                         if distance_km <= spoof_limit_km:
                             max_distance_within_limit = max(max_distance_within_limit, distance_km)
                 
