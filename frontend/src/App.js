@@ -947,6 +947,15 @@ function App() {
                       <Database size={16} className="mr-2" />
                       View Full History
                     </Button>
+                    
+                    <Button 
+                      className="w-full mt-2"
+                      variant="outline"
+                      onClick={() => window.open(`https://www.vesselfinder.com/vessels/details/${selectedVessel.mmsi}`, '_blank')}
+                    >
+                      <Ship size={16} className="mr-2" />
+                      Search MMSI on VesselFinder
+                    </Button>
                   </div>
                 </ScrollArea>
               </CardContent>
