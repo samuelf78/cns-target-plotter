@@ -1116,11 +1116,11 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
     """Get vessel track history - properly sorted by timestamp across all sources"""
     try:
         # Get positions from ALL sources for this MMSI
-        # Sort by timestamp ascending (oldest first) for proper trail drawing
+        # Sort by timestamp descending (newest first), then reverse for trail drawing
         positions = await db.positions.find(
             {'mmsi': mmsi},
             {'lat': 1, 'lon': 1, 'timestamp': 1, 'speed': 1, 'course': 1, 'heading': 1, 'source_id': 1}
-        ).sort('timestamp', 1).limit(limit).to_list(limit)
+        ).sort('timestamp', -1).limit(limit).to_list(limit)
         
         # Remove duplicates (same timestamp from different sources) - keep first occurrence
         seen_timestamps = set()
