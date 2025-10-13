@@ -903,6 +903,25 @@ async def clear_database():
         logger.error(f"Error clearing database: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/database/update-spoof-limits")
+async def update_spoof_limits():
+    """Update all sources with old 50km spoof limit to new 500km default"""
+    try:
+        result = await db.sources.update_many(
+            {'spoof_limit_km': 50.0},
+            {'$set': {'spoof_limit_km': 500.0}}
+        )
+        
+        logger.info(f"Updated {result.modified_count} sources from 50km to 500km spoof limit")
+        
+        return {
+            'status': 'updated',
+            'sources_updated': result.modified_count
+        }
+    except Exception as e:
+        logger.error(f"Error updating spoof limits: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/serial/ports")
 async def list_serial_ports():
     """List available serial ports"""
