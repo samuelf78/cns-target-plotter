@@ -315,6 +315,16 @@ body {
   font-size: 0.8rem;
 }
 
+.badge-warning {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
 .custom-base-station-icon {
   background: none !important;
   border: none !important;
