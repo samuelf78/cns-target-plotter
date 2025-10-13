@@ -608,10 +608,6 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
             
             logger.info(f"UDP receiver started: {config.host}:{config.port}")
             
-            # Create event loop for running async code from thread
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
             for msg in receiver:
                 if source_id not in active_streams:
                     logger.info(f"UDP stream {source_id} stopped")
@@ -619,27 +615,31 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                 try:
                     raw_msg = msg.raw.decode('utf-8', errors='ignore')
                     
-                    # Process using the async process_ais_message function
-                    # This will handle database storage AND WebSocket broadcasting
-                    loop.run_until_complete(
-                        process_ais_message(raw_msg, source=f'udp:{config.host}:{config.port}', source_id=source_id)
-                    )
-                    
-                    # Update source stats
-                    loop.run_until_complete(
-                        db.sources.update_one(
-                            {'source_id': source_id},
-                            {
-                                '$inc': {'message_count': 1},
-                                '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
-                            }
+                    # Schedule the async function on the main event loop
+                    if main_event_loop:
+                        future = asyncio.run_coroutine_threadsafe(
+                            process_ais_message(raw_msg, source=f'udp:{config.host}:{config.port}', source_id=source_id),
+                            main_event_loop
                         )
-                    )
+                        # Wait for completion (with timeout to prevent blocking)
+                        future.result(timeout=5)
+                        
+                        # Update source stats
+                        future = asyncio.run_coroutine_threadsafe(
+                            db.sources.update_one(
+                                {'source_id': source_id},
+                                {
+                                    '$inc': {'message_count': 1},
+                                    '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+                                }
+                            ),
+                            main_event_loop
+                        )
+                        future.result(timeout=5)
                     
                 except Exception as e:
                     logger.error(f"Error processing UDP message: {e}")
-            
-            loop.close()
+                    
         except Exception as e:
             logger.error(f"UDP stream error: {e}")
     
