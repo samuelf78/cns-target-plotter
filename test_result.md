@@ -189,7 +189,7 @@ backend:
   - task: "Fix TCP/UDP stream real-time broadcasting"
     implemented: true
     working: "NA"
-    file: "/app/backend/server.py"
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
     stuck_count: 0
     priority: "critical"
     needs_retesting: true
@@ -219,6 +219,34 @@ backend:
           - Real-time data appears on map as it arrives via TCP/UDP
           - No need to toggle streams to see data
           - WebSocket broadcasts position updates immediately
+      - working: "NA"
+        agent: "main"
+        comment: |
+          ROOT CAUSE FOUND via troubleshoot_agent:
+          - Backend WebSocket broadcasting was working correctly
+          - Frontend WebSocket client was COMPLETELY MISSING
+          - Comment in code said "using native WebSocket" but no implementation existed
+          - Frontend only used polling (every 5 seconds) to fetch from database
+          - This explains why data appeared after toggle (DB refresh) but not in real-time
+          
+          FINAL FIX APPLIED:
+          Backend (server.py):
+          - Added startup event to capture main_event_loop (line 1188-1192)
+          - Used asyncio.run_coroutine_threadsafe() in TCP/UDP handlers
+          - Created async helper function process_stream_message()
+          - TCP/UDP threads now properly schedule async operations on main loop
+          
+          Frontend (App.js):
+          - Added connectWebSocket() function with reconnection logic
+          - WebSocket connects to ${WS_URL}/api/ws
+          - Handles 'position' and 'vessel_info' message types
+          - Auto-reconnects after 5 seconds if disconnected
+          - Uses existing updateVesselPosition() and updateVesselInfo() functions
+          - Added cleanup in useEffect return
+          
+          Changes:
+          - Backend: Lines 59-61, 535-640, 1188-1192
+          - Frontend: Lines 126-206 (WebSocket connection added)
 
 frontend:
   - task: "VDO marker visualization (blue squares)"
