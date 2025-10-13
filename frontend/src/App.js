@@ -37,13 +37,13 @@ const isBaseStation = (mmsi) => {
   return mmsi.startsWith('00');
 };
 
-// Create blue square icon for base stations
-const createBaseStationIcon = () => {
+// Create blue square icon for base stations and VDO positions
+const createBlueSquareIcon = () => {
   return L.divIcon({
-    html: `<div style="width: 16px; height: 16px; background-color: #3b82f6; border: 2px solid #ffffff; box-shadow: 0 0 4px rgba(0,0,0,0.5);"></div>`,
-    className: 'custom-base-station-icon',
-    iconSize: [16, 16],
-    iconAnchor: [8, 8]
+    html: `<div style="width: 24px; height: 24px; background-color: #3b82f6; border: 2px solid #ffffff; box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);"></div>`,
+    className: 'custom-blue-square-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
   });
 };
 
