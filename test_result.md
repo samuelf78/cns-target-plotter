@@ -219,8 +219,6 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Fix Type 4 (Base Station Report) message processing"
-    - "Fix VDO message detection"
     - "VDO marker visualization (blue squares)"
     - "VDO range circles (pink circles)"
   stuck_tasks: []
