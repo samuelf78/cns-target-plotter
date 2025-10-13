@@ -445,7 +445,7 @@ function App() {
   };
 
   const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 3440.065; // Earth radius in nautical miles
+    const R = 6371; // Earth radius in kilometers
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a = 
