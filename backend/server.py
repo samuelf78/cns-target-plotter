@@ -809,7 +809,7 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
         
         for source in active_sources:
             source_id = source['source_id']
-            spoof_limit_km = source.get('spoof_limit_km', 50.0)
+            spoof_limit_km = source.get('spoof_limit_km', 500.0)
             
             # Get VDO positions for this source
             vdo_positions = await db.positions.find({
