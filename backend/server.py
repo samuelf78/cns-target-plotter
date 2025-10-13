@@ -1131,6 +1131,9 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
                 seen_timestamps.add(ts)
                 unique_positions.append(pos)
         
+        # Reverse to get chronological order (oldest to newest) for trail drawing
+        unique_positions.reverse()
+        
         serialized_positions = [serialize_doc(p) for p in unique_positions]
         
         logger.info(f"Track for {mmsi}: {len(unique_positions)} unique positions from {len(positions)} total")
