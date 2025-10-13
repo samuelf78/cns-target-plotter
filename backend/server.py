@@ -1185,6 +1185,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@app.on_event("startup")
+async def startup_event():
+    global main_event_loop
+    main_event_loop = asyncio.get_event_loop()
+    logger.info("Main event loop captured for stream handlers")
+
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
