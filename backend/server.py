@@ -115,7 +115,7 @@ class DataSource(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_message: Optional[datetime] = None
     message_count: int = 0
-    spoof_limit_km: float = 50.0  # Default 50km spoof limit
+    spoof_limit_km: float = 500.0  # Default 500km spoof limit
 
 # Helper functions
 def serialize_doc(doc):
