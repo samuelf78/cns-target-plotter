@@ -1000,26 +1000,61 @@ function App() {
                   ) : (
                     <div className="space-y-2">
                       {sources.map(source => (
-                        <div key={source.source_id} className="source-item">
-                          <div className="source-info">
-                            <div className="source-name">{source.name}</div>
-                            <div className="source-meta">
-                              <span className="source-type">{source.source_type.toUpperCase()}</span>
-                              <span className="source-count">{source.message_count || 0} msgs</span>
+                        <div key={source.source_id} className="source-item-expanded">
+                          <div className="source-main">
+                            <div className="source-info">
+                              <div className="source-name">{source.name}</div>
+                              <div className="source-meta">
+                                <span className="source-type">{source.source_type.toUpperCase()}</span>
+                                <span className="source-count">{source.message_count || 0} msgs</span>
+                              </div>
+                            </div>
+                            <div className="source-controls">
+                              <Switch
+                                checked={source.status === 'active'}
+                                onCheckedChange={() => toggleSource(source.source_id)}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => deleteSource(source.source_id)}
+                              >
+                                <Trash2 size={16} />
+                              </Button>
                             </div>
                           </div>
-                          <div className="source-controls">
-                            <Switch
-                              checked={source.status === 'active'}
-                              onCheckedChange={() => toggleSource(source.source_id)}
-                            />
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => deleteSource(source.source_id)}
-                            >
-                              <Trash2 size={16} />
-                            </Button>
+                          
+                          {/* Spoof Limit Configuration */}
+                          <div className="spoof-limit-section">
+                            <label className="spoof-label">Spoof Limit (km):</label>
+                            {editingSpoofLimit === source.source_id ? (
+                              <div className="spoof-edit">
+                                <Input
+                                  type="number"
+                                  defaultValue={source.spoof_limit_km || 50}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      updateSpoofLimit(source.source_id, parseFloat(e.target.value));
+                                    }
+                                  }}
+                                  className="spoof-input"
+                                />
+                                <Button size="sm" onClick={() => setEditingSpoofLimit(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="spoof-display">
+                                <span className="spoof-value">{source.spoof_limit_km || 50} km</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingSpoofLimit(source.source_id)}
+                                >
+                                  <Settings size={14} />
+                                </Button>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
