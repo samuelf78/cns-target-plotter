@@ -31,10 +31,12 @@ L.Icon.Default.mergeOptions({
 });
 
 // Check if MMSI is a base station / shore station
-const isBaseStation = (mmsi) => {
-  if (!mmsi) return false;
+const isBaseStation = (vessel) => {
+  if (!vessel) return false;
+  // Check backend flag first (for VDO Type 4 messages)
+  if (vessel.is_base_station) return true;
   // Base stations typically start with 00 (e.g., 002..., 003...)
-  return mmsi.startsWith('00');
+  return vessel.mmsi && vessel.mmsi.startsWith('00');
 };
 
 // Create blue square icon for base stations and VDO positions
