@@ -421,20 +421,23 @@ function App() {
 
   const isSpoofed = (vessel) => {
     if (!vessel.last_position?.lat || !vessel.last_position?.lon) return false;
-    if (vdoPositions.length === 0) return false;
+    if (vdoData.length === 0) return false;
     
-    // Calculate distance from vessel to each VDO position
-    for (const vdo of vdoPositions) {
-      const distance = calculateDistance(
-        vessel.last_position.lat,
-        vessel.last_position.lon,
-        vdo.lat,
-        vdo.lon
-      );
-      
-      // If vessel is beyond the spoof limit radius, it's spoofed
-      if (distance > vdo.radius_nm) {
-        return true;
+    // Check if vessel is beyond spoof limit from any VDO in same source
+    for (const vdo of vdoData) {
+      // Check if vessel is from same source as VDO
+      if (vessel.source_ids && vessel.source_ids.includes(vdo.source_id)) {
+        const distance = calculateDistance(
+          vessel.last_position.lat,
+          vessel.last_position.lon,
+          vdo.lat,
+          vdo.lon
+        );
+        
+        // If vessel is beyond the spoof limit, it's spoofed
+        if (distance > vdo.spoof_limit_km) {
+          return true;
+        }
       }
     }
     
