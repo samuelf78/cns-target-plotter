@@ -1304,6 +1304,28 @@ function App() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Upload Progress Indicator - Bottom Right */}
+      {uploadProgress && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <Card className="w-80 bg-slate-800 border-slate-700">
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <Upload className="animate-pulse text-blue-400" size={20} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-white">File Upload</p>
+                    <p className="text-xs text-slate-400">{uploadStatus}</p>
+                  </div>
+                </div>
+                <div className="w-full bg-slate-700 rounded-full h-2">
+                  <div className="bg-blue-500 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
