@@ -282,7 +282,9 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         timestamp = datetime.now(timezone.utc)
         
         # Determine if VDO or VDM
-        is_vdo = raw_message.startswith('!AIVDO') or raw_message.startswith('$AIVDO')
+        # VDO format: !xxVDO or $xxVDO (where xx is 2-char talker ID like AB, AI, etc.)
+        # VDM format: !xxVDM or $xxVDM
+        is_vdo = 'VDO' in raw_message[:10]  # Check first 10 chars for VDO
         
         # Store raw message
         message_doc = {
