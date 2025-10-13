@@ -133,6 +133,20 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Card headers in sidebar */
+.sidebar .search-card h3,
+.sidebar .map-provider-card h3,
+.sidebar .vessel-list-card h3 {
+  color: #ffffff !important;
+}
+
+/* Ensure all card content text is light colored */
+.sidebar .search-card *,
+.sidebar .map-provider-card *,
+.sidebar .vessel-list-card * {
+  color: #e2e8f0;
+}
+
 .search-card .space-y-3 > * + * {
   margin-top: 0.75rem;
 }
