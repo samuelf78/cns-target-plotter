@@ -152,10 +152,10 @@ function App() {
     try {
       const response = await axios.get(`${API}/vessels/active?limit=5000`);
       setVessels(response.data.vessels || []);
-      setVdoPositions(response.data.vdo_positions || []);
+      setVdoData(response.data.vdo_data || []);
     } catch (error) {
       console.error('Error loading vessels:', error);
-      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+      const errorMsg = response?.data?.detail || error.message || 'Unknown error';
       toast.error(`Failed to load vessels: ${errorMsg}`);
     }
   };
