@@ -1207,6 +1207,9 @@ function App() {
                             <p><strong>Time:</strong> {pos.timestamp}</p>
                             <p><strong>Pos:</strong> {pos.lat?.toFixed(6)}, {pos.lon?.toFixed(6)}</p>
                             <p><strong>Speed:</strong> {pos.speed} kts, <strong>Course:</strong> {pos.course}°</p>
+                            <p><strong>Heading:</strong> {pos.heading}°, <strong>Nav Status:</strong> {pos.nav_status}</p>
+                            <p><strong>Repeat Indicator:</strong> {pos.repeat_indicator ?? 'N/A'}</p>
+                            <p><strong>VDO:</strong> {pos.is_vdo ? 'Yes' : 'No'}, <strong>Source:</strong> {pos.source_id?.substring(0, 8)}...</p>
                           </div>
                         ))}
                       </div>
