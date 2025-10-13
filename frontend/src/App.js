@@ -654,10 +654,10 @@ function App() {
                   </Marker>
                   
                   {/* Pink range circle (no fill) */}
-                  {vdo.radius_km > 0 && (
+                  {vdo.spoof_limit_km > 0 && (
                     <Circle
                       center={[vdo.lat, vdo.lon]}
-                      radius={vdo.radius_km * 1000}
+                      radius={vdo.spoof_limit_km * 1000}
                       pathOptions={{
                         color: '#ec4899',
                         fillColor: 'transparent',
