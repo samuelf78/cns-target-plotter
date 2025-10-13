@@ -109,6 +109,7 @@ function App() {
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
   const [showConnectionPanel, setShowConnectionPanel] = useState(false);
   const [showClearDbDialog, setShowClearDbDialog] = useState(false);
   
