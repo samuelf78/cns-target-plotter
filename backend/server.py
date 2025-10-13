@@ -831,16 +831,16 @@ async def disable_all_sources():
 
 @api_router.get("/vessels/active")
 async def get_active_vessels(limit: int = 5000, skip: int = 0):
-    """Get vessels from active sources only with spoof detection"""
+    """Get vessels from active sources with per-source VDO spoof detection"""
     try:
         import math
         
-        # Get active source IDs
+        # Get active sources with their spoof limits
         active_sources = await db.sources.find({'status': 'active'}).to_list(100)
         active_source_ids = [s['source_id'] for s in active_sources]
         
         if not active_source_ids:
-            return {'vessels': [], 'total': 0, 'vdo_positions': []}
+            return {'vessels': [], 'total': 0, 'vdo_data': []}
         
         # Get total count
         total = await db.vessels.count_documents({
@@ -852,63 +852,80 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
             'source_ids': {'$in': active_source_ids}
         }).sort('last_seen', -1).skip(skip).limit(limit).to_list(limit)
         
-        # Get VDO positions and calculate spoof limit
-        vdo_positions_data = []
-        vdo_positions = await db.positions.find({'is_vdo': True}).to_list(100)
+        # Process VDO positions per source
+        vdo_data_list = []
         
-        for vdo_pos in vdo_positions:
-            if not vdo_pos.get('lat') or not vdo_pos.get('lon'):
-                continue
+        for source in active_sources:
+            source_id = source['source_id']
+            spoof_limit_km = source.get('spoof_limit_km', 50.0)
+            
+            # Get VDO positions for this source
+            vdo_positions = await db.positions.find({
+                'is_vdo': True,
+                'source_id': source_id
+            }).to_list(100)
+            
+            for vdo_pos in vdo_positions:
+                if not vdo_pos.get('lat') or not vdo_pos.get('lon'):
+                    continue
+                    
+                vdo_lat = vdo_pos['lat']
+                vdo_lon = vdo_pos['lon']
+                vdo_mmsi = vdo_pos.get('mmsi')
                 
-            vdo_lat = vdo_pos['lat']
-            vdo_lon = vdo_pos['lon']
-            
-            # Get all VDM positions with repeat_indicator <= 0
-            vdm_positions = await db.positions.find({
-                'is_vdo': {'$ne': True},
-                'repeat_indicator': {'$lte': 0},
-                'lat': {'$exists': True, '$ne': None},
-                'lon': {'$exists': True, '$ne': None}
-            }).to_list(5000)
-            
-            max_distance = 0
-            
-            for vdm_pos in vdm_positions:
-                vdm_lat = vdm_pos.get('lat')
-                vdm_lon = vdm_pos.get('lon')
+                # Get VDM positions from SAME source only
+                vdm_positions = await db.positions.find({
+                    'is_vdo': {'$ne': True},
+                    'source_id': source_id,
+                    'lat': {'$exists': True, '$ne': None, '$ne': 0},
+                    'lon': {'$exists': True, '$ne': None, '$ne': 0}
+                }).to_list(10000)
                 
-                if vdm_lat and vdm_lon:
-                    lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
-                    lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                # Find furthest VDM within spoof limit
+                max_distance_within_limit = 0
+                
+                for vdm_pos in vdm_positions:
+                    vdm_lat = vdm_pos.get('lat')
+                    vdm_lon = vdm_pos.get('lon')
                     
-                    dlat = lat2 - lat1
-                    dlon = lon2 - lon1
-                    
-                    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                    c = 2 * math.asin(math.sqrt(a))
-                    distance_nm = 6371 * c * 0.539957
-                    
-                    max_distance = max(max_distance, distance_nm)
-            
-            vdo_positions_data.append({
-                'mmsi': vdo_pos.get('mmsi'),
-                'lat': vdo_lat,
-                'lon': vdo_lon,
-                'radius_nm': max_distance,
-                'timestamp': vdo_pos.get('timestamp')
-            })
+                    if vdm_lat and vdm_lon:
+                        # Calculate distance in km
+                        lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
+                        lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                        
+                        dlat = lat2 - lat1
+                        dlon = lon2 - lon1
+                        
+                        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                        c = 2 * math.asin(math.sqrt(a))
+                        distance_km = 6371 * c
+                        
+                        # Only consider VDMs within spoof limit
+                        if distance_km <= spoof_limit_km:
+                            max_distance_within_limit = max(max_distance_within_limit, distance_km)
+                
+                vdo_data_list.append({
+                    'mmsi': vdo_mmsi,
+                    'lat': vdo_lat,
+                    'lon': vdo_lon,
+                    'radius_km': max_distance_within_limit,
+                    'spoof_limit_km': spoof_limit_km,
+                    'source_id': source_id,
+                    'source_name': source['name'],
+                    'timestamp': vdo_pos.get('timestamp')
+                })
         
-        logger.info(f"Found {len(vessels)}/{total} vessels from {len(active_source_ids)} active sources, {len(vdo_positions_data)} VDO positions")
+        logger.info(f"Found {len(vessels)}/{total} vessels, {len(vdo_data_list)} VDO positions")
         
         serialized_vessels = [serialize_doc(v) for v in vessels]
         return {
             'vessels': serialized_vessels,
             'total': total,
-            'vdo_positions': vdo_positions_data
+            'vdo_data': vdo_data_list
         }
     except Exception as e:
         logger.error(f"Error loading active vessels: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)}
 
 @api_router.post("/database/clear")
 async def clear_database():
