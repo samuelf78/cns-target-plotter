@@ -1155,7 +1155,7 @@ function App() {
                               </div>
                             ) : (
                               <div className="spoof-display">
-                                <span className="spoof-value">{source.spoof_limit_km || 50} km</span>
+                                <span className="spoof-value">{source.spoof_limit_km || 500} km</span>
                                 <Button
                                   variant="ghost"
                                   size="sm"
