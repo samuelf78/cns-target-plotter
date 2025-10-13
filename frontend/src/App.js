@@ -314,13 +314,30 @@ function App() {
     if (!file) return;
 
     setUploadProgress(true);
+    setUploadStatus('Reading file...');
+    
+    // Count lines in file to estimate progress
+    const text = await file.text();
+    const lines = text.split('\n').filter(line => line.trim().startsWith('!') || line.trim().startsWith('$'));
+    const totalLines = lines.length;
+    
+    setUploadStatus(`Processing ${totalLines} lines...`);
+    
     const formData = new FormData();
     formData.append('file', file);
 
     try {
-      const response = await axios.post(`${API}/upload`, formData);
+      const response = await axios.post(`${API}/upload`, formData, {
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadStatus(`Uploading... ${percentCompleted}%`);
+        }
+      });
+      
       const processed = response.data.processed || 0;
       const errors = response.data.errors || 0;
+      
+      setUploadStatus(`Processed ${processed} messages`);
       
       if (processed > 0) {
         toast.success(`Processed ${processed} messages${errors > 0 ? ` (${errors} errors)` : ''}`);
@@ -336,6 +353,7 @@ function App() {
       toast.error(`Upload failed: ${errorMsg}`);
     } finally {
       setUploadProgress(false);
+      setUploadStatus('');
     }
   };
 
