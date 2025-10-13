@@ -308,7 +308,9 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'course': decoded.get('course'),
                 'heading': decoded.get('heading'),
                 'nav_status': decoded.get('status'),
-                'source_id': source_id
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0)
             }
             await db.positions.insert_one(position_doc)
             
