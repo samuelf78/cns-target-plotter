@@ -815,7 +815,7 @@ function App() {
                       </div>
                     )}
                     
-                    {isBaseStation(selectedVessel.mmsi) && (
+                    {isBaseStation(selectedVessel) && (
                       <div className="info-row">
                         <span className="info-label">Station Type:</span>
                         <span className="info-value badge-blue">Base Station</span>
