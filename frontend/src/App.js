@@ -648,7 +648,7 @@ function App() {
                         <p><strong>MMSI:</strong> {vdo.mmsi}</p>
                         <p><strong>Source:</strong> {vdo.source_name}</p>
                         <p><strong>Spoof Limit:</strong> {vdo.spoof_limit_km} km</p>
-                        <p><strong>Range Circle:</strong> {vdo.radius_km.toFixed(2)} km</p>
+                        <p><strong>Range Circle:</strong> {vdo.spoof_limit_km} km</p>
                       </div>
                     </Popup>
                   </Marker>
