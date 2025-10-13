@@ -101,3 +101,122 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: |
+  VDO messages (AIS Type 4 - Base Station Reports) were not being processed correctly. 
+  Position data from Type 4 messages was not being extracted and stored, preventing VDO 
+  targets and their range circles from appearing on the map.
+  
+  Sample VDO message for testing: !ABVDO,1,1,,B,4>kvmbiuHO969Rvgn<:CUW?P0<0m,0*4D
+
+backend:
+  - task: "Fix Type 4 (Base Station Report) message processing"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Fixed AIS Type 4 message processing:
+          1. Separated Type 4 handling from Type 1-3 messages
+          2. Type 4 messages now extract correct fields (lat, lon, accuracy, epfd, raim)
+          3. Added is_base_station flag to vessels collection
+          4. Only stores positions if lat/lon are not None
+          Lines changed: 301-383 in server.py
+  
+  - task: "Fix VDO message detection"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Fixed VDO detection logic:
+          - Previous: Checked for '!AIVDO' or '$AIVDO' prefix
+          - Now: Checks for 'VDO' in first 10 characters
+          - This handles all VDO formats like !ABVDO, !AIVDO, $ABVDO, etc.
+          Line changed: 285-287 in server.py
+          Tested with sample message: !ABVDO,1,1,,B,4>kvmbiuHO969Rvgn<:CUW?P0<0m,0*4D
+          Decodes to: MMSI 994031019, Lat 18.01114, Lon 41.66945
+
+frontend:
+  - task: "VDO marker visualization (blue squares)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Frontend already has VDO visualization code. Need to test if it works with new backend changes."
+  
+  - task: "VDO range circles (pink circles)"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: "Frontend already has range circle code. Need to test if it works with new backend changes."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Fix Type 4 (Base Station Report) message processing"
+    - "Fix VDO message detection"
+    - "VDO marker visualization (blue squares)"
+    - "VDO range circles (pink circles)"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+  - agent: "main"
+    message: |
+      Fixed two critical issues:
+      
+      1. Type 4 Message Processing:
+         - Separated Type 4 (Base Station Report) from Type 1-3 (Position Reports)
+         - Type 4 has different fields: lat, lon, accuracy, epfd, raim
+         - Does NOT have: speed, course, heading, nav_status
+         - Added is_base_station flag to mark base stations
+      
+      2. VDO Detection:
+         - Fixed to detect VDO in any format (!ABVDO, !AIVDO, $ABVDO, etc.)
+         - Changed from prefix check to searching for 'VDO' in first 10 chars
+      
+      Sample VDO message for testing:
+      !ABVDO,1,1,,B,4>kvmbiuHO969Rvgn<:CUW?P0<0m,0*4D
+      
+      This decodes to:
+      - MMSI: 994031019
+      - Type: 4 (Base Station Report)
+      - Lat: 18.01114
+      - Lon: 41.66945
+      
+      Backend has been restarted and is running.
+      
+      Testing needed:
+      1. Upload or stream the sample VDO message
+      2. Verify it's stored in positions collection
+      3. Verify blue square marker appears on map
+      4. Verify pink range circle is calculated and displayed
+      5. Check spoof detection logic works correctly
