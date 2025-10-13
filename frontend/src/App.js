@@ -785,6 +785,13 @@ function App() {
                       </div>
                     )}
                     
+                    {isSpoofed(selectedVessel) && (
+                      <div className="info-row">
+                        <span className="info-label">Warning:</span>
+                        <span className="info-value badge-warning">⚠️ Possible Spoof</span>
+                      </div>
+                    )}
+                    
                     {vesselSources.length > 0 && (
                       <>
                         <div className="info-section-title">
