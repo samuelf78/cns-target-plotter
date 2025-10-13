@@ -1238,6 +1238,39 @@ function App() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Clear Database Confirmation Dialog */}
+      <Dialog open={showClearDbDialog} onOpenChange={setShowClearDbDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear Database?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600">
+              This will remove all vessels, positions, and messages from the database.
+              <br />
+              <strong>Sources will be kept.</strong>
+            </p>
+            <p className="text-sm text-red-600 mt-2">
+              This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowClearDbDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearDatabase}
+            >
+              Clear Database
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
