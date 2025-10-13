@@ -1113,7 +1113,7 @@ function App() {
                               <div className="spoof-edit">
                                 <Input
                                   type="number"
-                                  defaultValue={source.spoof_limit_km || 50}
+                                  defaultValue={source.spoof_limit_km || 500}
                                   onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                       updateSpoofLimit(source.source_id, parseFloat(e.target.value));
