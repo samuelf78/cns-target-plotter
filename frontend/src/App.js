@@ -1054,21 +1054,9 @@ function App() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={async () => {
-                      if (window.confirm('Clear all vessel data? This will remove all vessels, positions, and messages from the database. Sources will be kept.')) {
-                        try {
-                          const response = await axios.post(`${API}/database/clear`);
-                          toast.success(`Database cleared: ${response.data.vessels_deleted} vessels, ${response.data.positions_deleted} positions, ${response.data.messages_deleted} messages`);
-                          setVessels([]);
-                          setSelectedVessel(null);
-                          setVesselTrack([]);
-                        } catch (error) {
-                          toast.error('Failed to clear database');
-                        }
-                      }
-                    }}
+                    onClick={() => setShowClearDbDialog(true)}
                   >
-                    <Trash2 size={16} className="mr-2" />
+                    <Database size={16} className="mr-2" />
                     Clear Database
                   </Button>
                 </div>
