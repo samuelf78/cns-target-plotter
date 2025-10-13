@@ -925,7 +925,7 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
         }
     except Exception as e:
         logger.error(f"Error loading active vessels: {e}")
-        raise HTTPException(status_code=500, detail=str(e)}
+        raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/database/clear")
 async def clear_database():
