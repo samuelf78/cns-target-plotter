@@ -110,6 +110,7 @@ function App() {
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
   const [showConnectionPanel, setShowConnectionPanel] = useState(false);
+  const [showClearDbDialog, setShowClearDbDialog] = useState(false);
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
