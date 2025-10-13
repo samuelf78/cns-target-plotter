@@ -775,6 +775,25 @@ async def toggle_source(source_id: str):
         logger.error(f"Error toggling source: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.patch("/sources/{source_id}/spoof-limit")
+async def update_spoof_limit(source_id: str, spoof_limit_km: float):
+    """Update spoof limit for a data source"""
+    try:
+        result = await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'spoof_limit_km': spoof_limit_km}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        return {'status': 'updated', 'spoof_limit_km': spoof_limit_km}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating spoof limit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.delete("/sources/{source_id}")
 async def delete_source(source_id: str):
     """Remove a data source"""
