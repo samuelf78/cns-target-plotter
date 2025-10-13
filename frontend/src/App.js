@@ -101,7 +101,8 @@ function App() {
   const [wsConnected, setWsConnected] = useState(false);
   const [sources, setSources] = useState([]);
   const [vesselSources, setVesselSources] = useState([]);
-  const [vdoPositions, setVdoPositions] = useState([]);
+  const [vdoData, setVdoData] = useState([]);
+  const [editingSpoofLimit, setEditingSpoofLimit] = useState(null);
   const [showSourceManager, setShowSourceManager] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
