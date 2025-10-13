@@ -564,6 +564,10 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
             
             logger.info(f"TCP stream connected: {config.host}:{config.port}")
             
+            # Create event loop for running async code from thread
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            
             for msg in conn:
                 if source_id not in active_streams:
                     logger.info(f"TCP stream {source_id} stopped")
@@ -572,82 +576,27 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     # msg is an AISSentence object with .raw attribute (bytes)
                     raw_msg = msg.raw.decode('utf-8', errors='ignore')
                     
-                    # Process synchronously without async
-                    decoded_obj = decode(raw_msg)
-                    if decoded_obj:
-                        decoded = decoded_obj.asdict()
-                        mmsi = str(decoded.get('mmsi', 'unknown'))
-                        msg_type = decoded.get('msg_type', 0)
-                        timestamp = datetime.now(timezone.utc)
-                        
-                        # Store using synchronous pymongo instead of motor
-                        import pymongo
-                        sync_client = pymongo.MongoClient(mongo_url)
-                        sync_db = sync_client[os.environ['DB_NAME']]
-                        
-                        # Determine if VDO or VDM
-                        is_vdo = raw_msg.startswith('!AIVDO') or raw_msg.startswith('$AIVDO')
-                        
-                        # Store message
-                        message_doc = {
-                            'mmsi': mmsi,
-                            'timestamp': timestamp.isoformat(),
-                            'message_type': msg_type,
-                            'raw': raw_msg,
-                            'decoded': decoded,
-                            'source': f'tcp:{config.host}:{config.port}',
-                            'source_id': source_id,
-                            'is_vdo': is_vdo,
-                            'repeat_indicator': decoded.get('repeat', 0)
-                        }
-                        sync_db.messages.insert_one(message_doc)
-                        
-                        # Process position reports
-                        if msg_type in [1, 2, 3, 18]:
-                            position_doc = {
-                                'mmsi': mmsi,
-                                'timestamp': timestamp.isoformat(),
-                                'lat': decoded.get('lat'),
-                                'lon': decoded.get('lon'),
-                                'speed': decoded.get('speed'),
-                                'course': decoded.get('course'),
-                                'heading': decoded.get('heading'),
-                                'nav_status': decoded.get('status'),
-                                'source_id': source_id,
-                                'is_vdo': is_vdo,
-                                'repeat_indicator': decoded.get('repeat', 0)
-                            }
-                            sync_db.positions.insert_one(position_doc)
-                            
-                            pos_count = sync_db.positions.count_documents({'mmsi': mmsi})
-                            
-                            sync_db.vessels.update_one(
-                                {'mmsi': mmsi},
-                                {
-                                    '$set': {
-                                        'last_position': position_doc,
-                                        'last_seen': timestamp.isoformat(),
-                                        'position_count': pos_count,
-                                        'country': get_mmsi_country(mmsi)
-                                    },
-                                    '$addToSet': {'source_ids': source_id}
-                                },
-                                upsert=True
-                            )
-                            
-                            logger.info(f"TCP: Processed position for MMSI {mmsi}")
-                        
-                        # Update source stats
-                        sync_db.sources.update_one(
+                    # Process using the async process_ais_message function
+                    # This will handle database storage AND WebSocket broadcasting
+                    loop.run_until_complete(
+                        process_ais_message(raw_msg, source=f'tcp:{config.host}:{config.port}', source_id=source_id)
+                    )
+                    
+                    # Update source stats
+                    loop.run_until_complete(
+                        db.sources.update_one(
                             {'source_id': source_id},
                             {
                                 '$inc': {'message_count': 1},
-                                '$set': {'last_message': timestamp.isoformat()}
+                                '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
                             }
                         )
-                        
+                    )
+                    
                 except Exception as e:
                     logger.error(f"Error processing TCP message: {e}")
+            
+            loop.close()
         except Exception as e:
             logger.error(f"TCP stream error for {config.host}:{config.port} - {e}")
     
