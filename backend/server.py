@@ -864,6 +864,68 @@ async def list_serial_ports():
     ports = serial.tools.list_ports.comports()
     return {'ports': [{'device': p.device, 'description': p.description} for p in ports]}
 
+@api_router.get("/vdo/positions")
+async def get_vdo_positions():
+    """Get all VDO (own ship) positions with spoof detection radius"""
+    try:
+        import math
+        
+        # Get all VDO positions
+        vdo_positions = await db.positions.find({'is_vdo': True}).to_list(1000)
+        
+        result = []
+        
+        for vdo_pos in vdo_positions:
+            if not vdo_pos.get('lat') or not vdo_pos.get('lon'):
+                continue
+                
+            vdo_lat = vdo_pos['lat']
+            vdo_lon = vdo_pos['lon']
+            
+            # Get all VDM positions with repeat_indicator <= 0
+            vdm_positions = await db.positions.find({
+                'is_vdo': {'$ne': True},
+                'repeat_indicator': {'$lte': 0},
+                'lat': {'$exists': True, '$ne': None},
+                'lon': {'$exists': True, '$ne': None}
+            }).to_list(10000)
+            
+            max_distance = 0
+            
+            # Calculate distance to furthest VDM target
+            for vdm_pos in vdm_positions:
+                vdm_lat = vdm_pos.get('lat')
+                vdm_lon = vdm_pos.get('lon')
+                
+                if vdm_lat and vdm_lon:
+                    # Haversine formula for distance
+                    lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
+                    lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                    
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    
+                    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                    c = 2 * math.asin(math.sqrt(a))
+                    distance_km = 6371 * c  # Earth radius in km
+                    distance_nm = distance_km * 0.539957  # Convert to nautical miles
+                    
+                    max_distance = max(max_distance, distance_nm)
+            
+            result.append({
+                'mmsi': vdo_pos.get('mmsi'),
+                'lat': vdo_lat,
+                'lon': vdo_lon,
+                'radius_nm': max_distance,
+                'radius_km': max_distance * 1.852,
+                'timestamp': vdo_pos.get('timestamp')
+            })
+        
+        return {'vdo_positions': result}
+    except Exception as e:
+        logger.error(f"Error getting VDO positions: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/vessels")
 async def get_vessels(limit: int = 100):
     """Get all vessels"""
