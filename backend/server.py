@@ -558,6 +558,17 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     
     stream_id = source_id
     
+    # Async helper to process message and update stats
+    async def process_stream_message(raw_msg: str, source_str: str, sid: str):
+        await process_ais_message(raw_msg, source=source_str, source_id=sid)
+        await db.sources.update_one(
+            {'source_id': sid},
+            {
+                '$inc': {'message_count': 1},
+                '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
+            }
+        )
+    
     def tcp_stream_handler():
         try:
             logger.info(f"Connecting to TCP stream: {config.host}:{config.port}")
@@ -576,27 +587,17 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     # Schedule the async function on the main event loop
                     if main_event_loop:
                         future = asyncio.run_coroutine_threadsafe(
-                            process_ais_message(raw_msg, source=f'tcp:{config.host}:{config.port}', source_id=source_id),
+                            process_stream_message(raw_msg, f'tcp:{config.host}:{config.port}', source_id),
                             main_event_loop
                         )
                         # Wait for completion (with timeout to prevent blocking)
-                        future.result(timeout=5)
-                        
-                        # Update source stats
-                        future = asyncio.run_coroutine_threadsafe(
-                            db.sources.update_one(
-                                {'source_id': source_id},
-                                {
-                                    '$inc': {'message_count': 1},
-                                    '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
-                                }
-                            ),
-                            main_event_loop
-                        )
-                        future.result(timeout=5)
+                        try:
+                            future.result(timeout=2)
+                        except Exception as e:
+                            logger.error(f"Error processing TCP message: {e}")
                     
                 except Exception as e:
-                    logger.error(f"Error processing TCP message: {e}")
+                    logger.error(f"Error in TCP handler: {e}")
                     
         except Exception as e:
             logger.error(f"TCP stream error for {config.host}:{config.port} - {e}")
@@ -618,27 +619,17 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                     # Schedule the async function on the main event loop
                     if main_event_loop:
                         future = asyncio.run_coroutine_threadsafe(
-                            process_ais_message(raw_msg, source=f'udp:{config.host}:{config.port}', source_id=source_id),
+                            process_stream_message(raw_msg, f'udp:{config.host}:{config.port}', source_id),
                             main_event_loop
                         )
                         # Wait for completion (with timeout to prevent blocking)
-                        future.result(timeout=5)
-                        
-                        # Update source stats
-                        future = asyncio.run_coroutine_threadsafe(
-                            db.sources.update_one(
-                                {'source_id': source_id},
-                                {
-                                    '$inc': {'message_count': 1},
-                                    '$set': {'last_message': datetime.now(timezone.utc).isoformat()}
-                                }
-                            ),
-                            main_event_loop
-                        )
-                        future.result(timeout=5)
+                        try:
+                            future.result(timeout=2)
+                        except Exception as e:
+                            logger.error(f"Error processing UDP message: {e}")
                     
                 except Exception as e:
-                    logger.error(f"Error processing UDP message: {e}")
+                    logger.error(f"Error in UDP handler: {e}")
                     
         except Exception as e:
             logger.error(f"UDP stream error: {e}")
