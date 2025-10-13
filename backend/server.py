@@ -299,7 +299,7 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         await db.messages.insert_one(message_doc)
         
         # Process based on message type
-        if msg_type in [1, 2, 3, 4]:  # Position Report (including Base Station)
+        if msg_type in [1, 2, 3]:  # Position Reports (Class A)
             position_doc = {
                 'mmsi': mmsi,
                 'timestamp': timestamp.isoformat(),
@@ -338,6 +338,50 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'type': 'position',
                 'data': position_doc
             })
+        
+        elif msg_type == 4:  # Base Station Report (VDO)
+            # Type 4 has position data but different fields than Type 1-3
+            position_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'lat': decoded.get('lat'),
+                'lon': decoded.get('lon'),
+                'accuracy': decoded.get('accuracy'),
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0),
+                'epfd': decoded.get('epfd'),  # Electronic Position Fixing Device type
+                'raim': decoded.get('raim')  # RAIM flag
+            }
+            
+            # Only store if position data exists
+            if position_doc['lat'] is not None and position_doc['lon'] is not None:
+                await db.positions.insert_one(position_doc)
+                
+                # Get position count
+                pos_count = await db.positions.count_documents({'mmsi': mmsi})
+                
+                # Update vessel last position and add to sources list
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc,
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi),
+                            'is_base_station': True  # Mark as base station
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                
+                # Broadcast to WebSocket clients
+                await manager.broadcast({
+                    'type': 'position',
+                    'data': position_doc
+                })
         
         elif msg_type == 5:  # Static and Voyage Related Data
             vessel_doc = {
