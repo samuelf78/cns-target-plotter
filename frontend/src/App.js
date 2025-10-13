@@ -632,19 +632,39 @@ function App() {
                 attribution='&copy; OpenStreetMap contributors'
               />
               
-              {/* VDO Position Circles (Pink) */}
-              {vdoPositions.map((vdo, idx) => (
-                <Circle
-                  key={`vdo-${idx}`}
-                  center={[vdo.lat, vdo.lon]}
-                  radius={vdo.radius_nm * 1852}
-                  pathOptions={{
-                    color: '#ec4899',
-                    fillColor: '#ec4899',
-                    fillOpacity: 0.1,
-                    weight: 2
-                  }}
-                />
+              {/* VDO Positions (Blue Squares) and Range Circles (Pink) */}
+              {vdoData.map((vdo, idx) => (
+                <React.Fragment key={`vdo-${idx}`}>
+                  {/* Blue square for VDO position */}
+                  <Marker
+                    position={[vdo.lat, vdo.lon]}
+                    icon={createBlueSquareIcon()}
+                  >
+                    <Popup>
+                      <div className="vessel-popup">
+                        <h3>VDO Position</h3>
+                        <p><strong>MMSI:</strong> {vdo.mmsi}</p>
+                        <p><strong>Source:</strong> {vdo.source_name}</p>
+                        <p><strong>Spoof Limit:</strong> {vdo.spoof_limit_km} km</p>
+                        <p><strong>Range Circle:</strong> {vdo.radius_km.toFixed(2)} km</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                  
+                  {/* Pink range circle (no fill) */}
+                  {vdo.radius_km > 0 && (
+                    <Circle
+                      center={[vdo.lat, vdo.lon]}
+                      radius={vdo.radius_km * 1000}
+                      pathOptions={{
+                        color: '#ec4899',
+                        fillColor: 'transparent',
+                        fillOpacity: 0,
+                        weight: 2
+                      }}
+                    />
+                  )}
+                </React.Fragment>
               ))}
 
               {/* Vessel Markers */}
