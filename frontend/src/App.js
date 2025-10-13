@@ -47,8 +47,8 @@ const createBaseStationIcon = () => {
   });
 };
 
-// Create direction arrow icon with color
-const createArrowIcon = (heading, positionCount) => {
+// Create direction arrow icon with color (greyed out if spoofed)
+const createArrowIcon = (heading, positionCount, isSpoofed) => {
   let color = '#ef4444'; // red - 1 position
   if (positionCount > 2) {
     color = '#22c55e'; // green - more than 2
@@ -56,10 +56,16 @@ const createArrowIcon = (heading, positionCount) => {
     color = '#eab308'; // yellow - 2 positions
   }
   
+  // Grey out if spoofed
+  if (isSpoofed) {
+    color = '#6b7280'; // grey
+  }
+  
   const rotation = heading || 0;
+  const opacity = isSpoofed ? 0.4 : 1.0;
   
   return L.divIcon({
-    html: `<div style="transform: rotate(${rotation}deg); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">
+    html: `<div style="transform: rotate(${rotation}deg); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; opacity: ${opacity};">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5">
         <path d="M12 2 L2 22 L12 18 L22 22 Z"/>
       </svg>
