@@ -257,10 +257,26 @@ function App() {
       if (idx >= 0) {
         updated[idx].last_position = posData;
       } else {
-        updated.push({ mmsi: posData.mmsi, last_position: posData });
+        // New vessel from WebSocket - add with basic info
+        // Will be enriched by next loadVessels() call
+        updated.push({ 
+          mmsi: posData.mmsi, 
+          last_position: posData,
+          position_count: 1,
+          source_ids: [posData.source_id]
+        });
       }
       return updated;
     });
+    
+    // Trigger a refresh to get complete vessel data including VDO info
+    // Debounce to avoid too many calls
+    if (!updateVesselPosition.timeout) {
+      updateVesselPosition.timeout = setTimeout(() => {
+        loadRecentPositions();
+        updateVesselPosition.timeout = null;
+      }, 2000);
+    }
   };
 
   const updateVesselInfo = (vesselData) => {
