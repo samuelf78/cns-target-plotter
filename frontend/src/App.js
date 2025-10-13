@@ -401,6 +401,40 @@ function App() {
     return vessel.position_count || 1;
   };
 
+  const isSpoofed = (vessel) => {
+    if (!vessel.last_position?.lat || !vessel.last_position?.lon) return false;
+    if (vdoPositions.length === 0) return false;
+    
+    // Calculate distance from vessel to each VDO position
+    for (const vdo of vdoPositions) {
+      const distance = calculateDistance(
+        vessel.last_position.lat,
+        vessel.last_position.lon,
+        vdo.lat,
+        vdo.lon
+      );
+      
+      // If vessel is beyond the spoof limit radius, it's spoofed
+      if (distance > vdo.radius_nm) {
+        return true;
+      }
+    }
+    
+    return false;
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 3440.065; // Earth radius in nautical miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
   const toggleFieldExpansion = (field) => {
     setExpandedFields(prev => ({
       ...prev,
