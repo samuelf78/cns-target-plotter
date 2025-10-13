@@ -673,7 +673,7 @@ function App() {
               {vessels.map((vessel) => {
                 if (!vessel.last_position?.lat || !vessel.last_position?.lon) return null;
                 
-                const isBase = isBaseStation(vessel.mmsi);
+                const isBase = isBaseStation(vessel);
                 const posCount = getPositionCount(vessel);
                 const spoofed = isSpoofed(vessel);
                 
