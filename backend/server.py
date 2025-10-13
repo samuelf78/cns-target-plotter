@@ -531,6 +531,9 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                         sync_client = pymongo.MongoClient(mongo_url)
                         sync_db = sync_client[os.environ['DB_NAME']]
                         
+                        # Determine if VDO or VDM
+                        is_vdo = raw_msg.startswith('!AIVDO') or raw_msg.startswith('$AIVDO')
+                        
                         # Store message
                         message_doc = {
                             'mmsi': mmsi,
@@ -539,7 +542,9 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                             'raw': raw_msg,
                             'decoded': decoded,
                             'source': f'tcp:{config.host}:{config.port}',
-                            'source_id': source_id
+                            'source_id': source_id,
+                            'is_vdo': is_vdo,
+                            'repeat_indicator': decoded.get('repeat', 0)
                         }
                         sync_db.messages.insert_one(message_doc)
                         
