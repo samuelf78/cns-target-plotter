@@ -391,6 +391,10 @@ function App() {
         vessel_name: searchName || undefined
       });
       setVessels(response.data.vessels || []);
+      
+      // Also load VDO data after search
+      await loadRecentPositions();
+      
       if (response.data.vessels.length === 0) {
         toast.info('No vessels found matching your search');
       } else {
