@@ -185,6 +185,40 @@ backend:
           - All marked with is_vdo: true flag
           
           The new detection logic ('VDO' in first 10 characters) works for all VDO formats as intended.
+  
+  - task: "Fix TCP/UDP stream real-time broadcasting"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py"
+    stuck_count: 0
+    priority: "critical"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          CRITICAL FIX: TCP/UDP stream data was not appearing in real-time on the map.
+          
+          Problem:
+          - TCP/UDP handlers used synchronous pymongo and skipped WebSocket broadcast
+          - Data stored in DB but frontend never received real-time updates
+          - Data only appeared after toggling stream (which triggered DB refresh)
+          - Toggling stopped the data flow
+          
+          Fix Applied:
+          - Replaced synchronous pymongo code with async process_ais_message()
+          - Added event loop in thread handlers to run async code
+          - process_ais_message() handles both DB storage AND WebSocket broadcasting
+          - Now consistent with serial handler (which already worked)
+          
+          Changes:
+          - TCP handler: Lines 560-598 (completely rewritten)
+          - UDP handler: Lines 600-638 (completely rewritten)
+          
+          Expected Result:
+          - Real-time data appears on map as it arrives via TCP/UDP
+          - No need to toggle streams to see data
+          - WebSocket broadcasts position updates immediately
 
 frontend:
   - task: "VDO marker visualization (blue squares)"
