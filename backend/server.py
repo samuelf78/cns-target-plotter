@@ -559,7 +559,9 @@ async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
                                 'course': decoded.get('course'),
                                 'heading': decoded.get('heading'),
                                 'nav_status': decoded.get('status'),
-                                'source_id': source_id
+                                'source_id': source_id,
+                                'is_vdo': is_vdo,
+                                'repeat_indicator': decoded.get('repeat', 0)
                             }
                             sync_db.positions.insert_one(position_doc)
                             
