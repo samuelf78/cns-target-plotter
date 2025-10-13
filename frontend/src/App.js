@@ -659,7 +659,7 @@ function App() {
                   <Marker
                     key={vessel.mmsi}
                     position={[vessel.last_position.lat, vessel.last_position.lon]}
-                    icon={isBase ? createBaseStationIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed)}
+                    icon={isBase ? createBlueSquareIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed)}
                     eventHandlers={{
                       click: () => selectVessel(vessel)
                     }}
