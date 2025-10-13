@@ -123,6 +123,7 @@ function App() {
   const fileInputRef = useRef(null);
   const wsRef = useRef(null);
   const pollIntervalRef = useRef(null);
+  const debounceTimeoutRef = useRef(null);
 
   useEffect(() => {
     // Don't load vessels by default - only load when searching
