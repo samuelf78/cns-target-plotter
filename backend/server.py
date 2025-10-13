@@ -299,7 +299,7 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         await db.messages.insert_one(message_doc)
         
         # Process based on message type
-        if msg_type in [1, 2, 3]:  # Position Report
+        if msg_type in [1, 2, 3, 4]:  # Position Report (including Base Station)
             position_doc = {
                 'mmsi': mmsi,
                 'timestamp': timestamp.isoformat(),
