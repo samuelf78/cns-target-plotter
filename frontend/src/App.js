@@ -271,13 +271,14 @@ function App() {
     });
     
     // Trigger a refresh to get complete vessel data including VDO info
-    // Debounce to avoid too many calls
-    if (!updateVesselPosition.timeout) {
-      updateVesselPosition.timeout = setTimeout(() => {
-        loadRecentPositions();
-        updateVesselPosition.timeout = null;
-      }, 2000);
+    // Debounce to avoid too many calls - use ref to persist across re-renders
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
     }
+    debounceTimeoutRef.current = setTimeout(() => {
+      loadRecentPositions();
+      debounceTimeoutRef.current = null;
+    }, 2000);
   };
 
   const updateVesselInfo = (vesselData) => {
