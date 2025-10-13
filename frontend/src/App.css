@@ -90,6 +90,21 @@ body {
   backdrop-filter: blur(10px);
 }
 
+/* Override Shadcn UI text colors in sidebar for better contrast */
+.sidebar .text-sm,
+.sidebar h3,
+.sidebar [class*="text-"],
+.sidebar label,
+.sidebar input::placeholder {
+  color: #e2e8f0 !important;
+}
+
+.sidebar input,
+.sidebar select,
+.sidebar button {
+  color: #f1f5f9;
+}
+
 .sidebar::-webkit-scrollbar {
   width: 8px;
 }
