@@ -292,6 +292,20 @@ function App() {
     });
   };
 
+  const handleClearDatabase = async () => {
+    try {
+      const response = await axios.post(`${API}/database/clear`);
+      toast.success(`Database cleared: ${response.data.vessels_deleted} vessels, ${response.data.positions_deleted} positions, ${response.data.messages_deleted} messages`);
+      setVessels([]);
+      setVdoData([]);
+      setSelectedVessel(null);
+      setVesselTrack([]);
+      setShowClearDbDialog(false);
+    } catch (error) {
+      toast.error('Failed to clear database');
+    }
+  };
+
   const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
