@@ -811,29 +811,81 @@ async def disable_all_sources():
 
 @api_router.get("/vessels/active")
 async def get_active_vessels(limit: int = 5000, skip: int = 0):
-    """Get vessels from active sources only"""
+    """Get vessels from active sources only with spoof detection"""
     try:
+        import math
+        
         # Get active source IDs
         active_sources = await db.sources.find({'status': 'active'}).to_list(100)
         active_source_ids = [s['source_id'] for s in active_sources]
         
         if not active_source_ids:
-            return {'vessels': [], 'total': 0}
+            return {'vessels': [], 'total': 0, 'vdo_positions': []}
         
         # Get total count
         total = await db.vessels.count_documents({
             'source_ids': {'$in': active_source_ids}
         })
         
-        # Get vessels that have at least one active source (optimized - don't enrich position count here)
+        # Get vessels that have at least one active source
         vessels = await db.vessels.find({
             'source_ids': {'$in': active_source_ids}
         }).sort('last_seen', -1).skip(skip).limit(limit).to_list(limit)
         
-        logger.info(f"Found {len(vessels)}/{total} vessels from {len(active_source_ids)} active sources")
+        # Get VDO positions and calculate spoof limit
+        vdo_positions_data = []
+        vdo_positions = await db.positions.find({'is_vdo': True}).to_list(100)
+        
+        for vdo_pos in vdo_positions:
+            if not vdo_pos.get('lat') or not vdo_pos.get('lon'):
+                continue
+                
+            vdo_lat = vdo_pos['lat']
+            vdo_lon = vdo_pos['lon']
+            
+            # Get all VDM positions with repeat_indicator <= 0
+            vdm_positions = await db.positions.find({
+                'is_vdo': {'$ne': True},
+                'repeat_indicator': {'$lte': 0},
+                'lat': {'$exists': True, '$ne': None},
+                'lon': {'$exists': True, '$ne': None}
+            }).to_list(5000)
+            
+            max_distance = 0
+            
+            for vdm_pos in vdm_positions:
+                vdm_lat = vdm_pos.get('lat')
+                vdm_lon = vdm_pos.get('lon')
+                
+                if vdm_lat and vdm_lon:
+                    lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
+                    lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                    
+                    dlat = lat2 - lat1
+                    dlon = lon2 - lon1
+                    
+                    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                    c = 2 * math.asin(math.sqrt(a))
+                    distance_nm = 6371 * c * 0.539957
+                    
+                    max_distance = max(max_distance, distance_nm)
+            
+            vdo_positions_data.append({
+                'mmsi': vdo_pos.get('mmsi'),
+                'lat': vdo_lat,
+                'lon': vdo_lon,
+                'radius_nm': max_distance,
+                'timestamp': vdo_pos.get('timestamp')
+            })
+        
+        logger.info(f"Found {len(vessels)}/{total} vessels from {len(active_source_ids)} active sources, {len(vdo_positions_data)} VDO positions")
         
         serialized_vessels = [serialize_doc(v) for v in vessels]
-        return {'vessels': serialized_vessels, 'total': total}
+        return {
+            'vessels': serialized_vessels,
+            'total': total,
+            'vdo_positions': vdo_positions_data
+        }
     except Exception as e:
         logger.error(f"Error loading active vessels: {e}")
         raise HTTPException(status_code=500, detail=str(e))
