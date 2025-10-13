@@ -161,6 +161,7 @@ function App() {
       
       // Update vessels state
       setVessels(vessels);
+      setVdoPositions(response.data.vdo_positions || []);
     } catch (error) {
       console.error('Error loading positions:', error);
     }
