@@ -128,13 +128,68 @@ function App() {
     loadSources();
     startPolling();
     loadSerialPorts();
+    connectWebSocket();
     
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
   }, []);
+
+  const connectWebSocket = () => {
+    try {
+      const wsUrl = `${WS_URL}/api/ws`;
+      console.log('Connecting to WebSocket:', wsUrl);
+      
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        setWsConnected(true);
+        toast.success('Real-time updates connected');
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          console.log('WebSocket message received:', message.type);
+          
+          if (message.type === 'position') {
+            // Real-time position update
+            updateVesselPosition(message.data);
+          } else if (message.type === 'vessel_info') {
+            // Vessel information update
+            updateVesselInfo(message.data);
+          }
+        } catch (error) {
+          console.error('Error processing WebSocket message:', error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        setWsConnected(false);
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket disconnected');
+        setWsConnected(false);
+        // Reconnect after 5 seconds
+        setTimeout(() => {
+          console.log('Attempting WebSocket reconnection...');
+          connectWebSocket();
+        }, 5000);
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket:', error);
+      setWsConnected(false);
+    }
+  };
 
   const startPolling = () => {
     // Poll for vessel updates every 5 seconds (only if we have search results)
