@@ -617,18 +617,34 @@ function App() {
                 attribution='&copy; OpenStreetMap contributors'
               />
               
+              {/* VDO Position Circles (Pink) */}
+              {vdoPositions.map((vdo, idx) => (
+                <Circle
+                  key={`vdo-${idx}`}
+                  center={[vdo.lat, vdo.lon]}
+                  radius={vdo.radius_nm * 1852}
+                  pathOptions={{
+                    color: '#ec4899',
+                    fillColor: '#ec4899',
+                    fillOpacity: 0.1,
+                    weight: 2
+                  }}
+                />
+              ))}
+
               {/* Vessel Markers */}
               {vessels.map((vessel) => {
                 if (!vessel.last_position?.lat || !vessel.last_position?.lon) return null;
                 
                 const isBase = isBaseStation(vessel.mmsi);
                 const posCount = getPositionCount(vessel);
+                const spoofed = isSpoofed(vessel);
                 
                 return (
                   <Marker
                     key={vessel.mmsi}
                     position={[vessel.last_position.lat, vessel.last_position.lon]}
-                    icon={isBase ? createBaseStationIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount)}
+                    icon={isBase ? createBaseStationIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed)}
                     eventHandlers={{
                       click: () => selectVessel(vessel)
                     }}
