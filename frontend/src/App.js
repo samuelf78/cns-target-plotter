@@ -280,10 +280,16 @@ function App() {
       return updated;
     });
     
-    // Immediately load complete vessel data including VDO info
-    // Don't debounce - we need real-time updates
-    console.log('WebSocket: Triggering loadRecentPositions for complete data');
-    loadRecentPositions();
+    // Rate-limited refresh: max once every 3 seconds
+    const now = Date.now();
+    if (!updateVesselPosition.lastUpdate || (now - updateVesselPosition.lastUpdate) > 3000) {
+      console.log('WebSocket: Triggering loadRecentPositions (rate-limited)');
+      updateVesselPosition.lastUpdate = now;
+      loadRecentPositions();
+    } else {
+      console.log('WebSocket: Skipping loadRecentPositions (rate-limited, last update', 
+        Math.round((now - updateVesselPosition.lastUpdate) / 1000), 'seconds ago)');
+    }
   };
 
   const updateVesselInfo = (vesselData) => {
