@@ -750,6 +750,71 @@ async def update_spoof_limit(source_id: str, spoof_limit_km: float):
         logger.error(f"Error updating spoof limit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.post("/sources/{source_id}/pause")
+async def pause_source(source_id: str):
+    """Pause a streaming source (stops processing but keeps connection)"""
+    try:
+        source = await db.sources.find_one({'source_id': source_id})
+        if not source:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'is_paused': True}}
+        )
+        
+        logger.info(f"Source {source_id} paused")
+        return {'status': 'paused'}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error pausing source: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/sources/{source_id}/resume")
+async def resume_source(source_id: str):
+    """Resume a paused streaming source"""
+    try:
+        source = await db.sources.find_one({'source_id': source_id})
+        if not source:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'is_paused': False}}
+        )
+        
+        logger.info(f"Source {source_id} resumed")
+        return {'status': 'resumed'}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resuming source: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.patch("/sources/{source_id}/message-limit")
+async def update_message_limit(source_id: str, message_limit: int):
+    """Update message limit for a data source"""
+    try:
+        if message_limit < 10:
+            raise HTTPException(status_code=400, detail="Message limit must be at least 10")
+        
+        result = await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'message_limit': message_limit}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        logger.info(f"Source {source_id} message limit updated to {message_limit}")
+        return {'status': 'updated', 'message_limit': message_limit}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating message limit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.delete("/sources/{source_id}")
 async def delete_source(source_id: str):
     """Remove a data source"""
