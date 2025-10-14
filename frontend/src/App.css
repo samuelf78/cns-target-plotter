@@ -475,6 +475,11 @@ body {
   color: #94a3b8;
 }
 
+.source-fragments {
+  color: #f59e0b;
+  font-size: 0.75rem;
+}
+
 .source-controls {
   display: flex;
   gap: 0.5rem;
