@@ -273,10 +273,23 @@ def get_ship_type_text(ship_type: int) -> str:
 async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None):
     """Process and store AIS message"""
     try:
+        # Check if source is paused
+        if source_id:
+            source_doc = await db.sources.find_one({'source_id': source_id})
+            if source_doc and source_doc.get('is_paused', False):
+                logger.debug(f"Source {source_id} is paused, skipping message")
+                return
+        
         # Decode the message
         decoded_msg = decode(raw_message)
         
         if not decoded_msg:
+            # Count as fragment/omitted message
+            if source_id:
+                await db.sources.update_one(
+                    {'source_id': source_id},
+                    {'$inc': {'fragment_count': 1}}
+                )
             return
         
         # Convert to dict
@@ -304,6 +317,34 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             'repeat_indicator': decoded.get('repeat', 0)
         }
         await db.messages.insert_one(message_doc)
+        
+        # Purge old messages if limit exceeded
+        if source_id:
+            source_doc = await db.sources.find_one({'source_id': source_id})
+            if source_doc:
+                message_limit = source_doc.get('message_limit', 500)
+                message_count = await db.messages.count_documents({'source_id': source_id})
+                
+                if message_count > message_limit:
+                    # Delete oldest messages beyond limit
+                    messages_to_delete = message_count - message_limit
+                    old_messages = await db.messages.find(
+                        {'source_id': source_id}
+                    ).sort('timestamp', 1).limit(messages_to_delete).to_list(messages_to_delete)
+                    
+                    if old_messages:
+                        message_ids = [msg['_id'] for msg in old_messages]
+                        await db.messages.delete_many({'_id': {'$in': message_ids}})
+                        
+                        # Also delete associated positions
+                        position_ids = [msg.get('mmsi') for msg in old_messages]
+                        await db.positions.delete_many({
+                            'source_id': source_id,
+                            'mmsi': {'$in': position_ids},
+                            'timestamp': {'$lte': old_messages[-1]['timestamp']}
+                        })
+                        
+                        logger.info(f"Purged {messages_to_delete} old messages from source {source_id}")
         
         # Process based on message type
         if msg_type in [1, 2, 3]:  # Position Reports (Class A)
