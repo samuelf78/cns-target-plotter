@@ -595,6 +595,26 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
 @api_router.post("/stream/start")
 async def start_stream(config: StreamConfig, background_tasks: BackgroundTasks):
     """Start TCP/UDP/Serial stream"""
+    
+    # Check for duplicates
+    duplicate_query = {'source_type': config.stream_type}
+    
+    if config.stream_type in ['tcp', 'udp']:
+        duplicate_query['config.host'] = config.host
+        duplicate_query['config.port'] = config.port
+        duplicate_name = f"{config.stream_type.upper()}: {config.host}:{config.port}"
+    elif config.stream_type == 'serial':
+        duplicate_query['config.serial_port'] = config.serial_port
+        duplicate_name = f"SERIAL: {config.serial_port}"
+    
+    existing = await db.sources.find_one(duplicate_query)
+    if existing:
+        logger.warning(f"Duplicate source rejected: {duplicate_name}")
+        raise HTTPException(
+            status_code=409, 
+            detail=f"Source already exists: {duplicate_name}. Please enable the existing source instead of adding a duplicate."
+        )
+    
     source_id = str(uuid.uuid4())
     
     # Create source record
