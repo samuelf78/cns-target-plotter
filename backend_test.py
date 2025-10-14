@@ -228,28 +228,172 @@ def verify_active_vessels():
         return False
 
 def check_backend_logs():
-    """Check backend logs for any errors"""
-    print("📋 Checking backend logs...")
+    """Check backend logs for processing messages"""
+    print("📋 Checking backend logs for AIS processing...")
     try:
-        import subprocess
-        result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.err.log'], 
+        result = subprocess.run(['tail', '-n', '100', '/var/log/supervisor/backend.out.log'], 
                               capture_output=True, text=True, timeout=10)
         
         if result.returncode == 0:
             logs = result.stdout.strip()
-            if logs:
-                print("⚠️ Recent backend error logs:")
-                print(logs[-1000:])  # Last 1000 chars
-                return False
-            else:
-                print("✅ No recent backend errors")
+            if "Processed AIS message" in logs:
+                print("✅ Found 'Processed AIS message' logs in backend")
+                # Count processing messages
+                processing_count = logs.count("Processed AIS message")
+                print(f"   - Found {processing_count} message processing entries")
                 return True
+            else:
+                print("❌ No 'Processed AIS message' logs found")
+                print("Recent logs:")
+                print(logs[-500:])  # Last 500 chars
+                return False
         else:
             print("⚠️ Could not read backend logs")
-            return True  # Don't fail the test for this
+            return False
     except Exception as e:
-        print(f"⚠️ Error checking logs: {e}")
-        return True  # Don't fail the test for this
+        print(f"❌ Error checking logs: {e}")
+        return False
+
+def test_websocket_connection():
+    """Test WebSocket connection and message reception"""
+    print("🔌 Testing WebSocket connection...")
+    
+    messages_received = []
+    connection_successful = False
+    
+    def on_message(ws, message):
+        try:
+            data = json.loads(message)
+            messages_received.append(data)
+            print(f"   📨 WebSocket message received: {data.get('type', 'unknown')}")
+        except Exception as e:
+            print(f"   ❌ Error parsing WebSocket message: {e}")
+    
+    def on_open(ws):
+        nonlocal connection_successful
+        connection_successful = True
+        print("   ✅ WebSocket connection opened")
+    
+    def on_error(ws, error):
+        print(f"   ❌ WebSocket error: {error}")
+    
+    def on_close(ws, close_status_code, close_msg):
+        print("   🔌 WebSocket connection closed")
+    
+    try:
+        ws = websocket.WebSocketApp(WS_URL,
+                                  on_open=on_open,
+                                  on_message=on_message,
+                                  on_error=on_error,
+                                  on_close=on_close)
+        
+        # Run WebSocket in a separate thread
+        ws_thread = threading.Thread(target=ws.run_forever)
+        ws_thread.daemon = True
+        ws_thread.start()
+        
+        # Wait for connection
+        time.sleep(3)
+        
+        if connection_successful:
+            print("✅ WebSocket connection established")
+            return True, messages_received
+        else:
+            print("❌ WebSocket connection failed")
+            return False, []
+            
+    except Exception as e:
+        print(f"❌ WebSocket connection error: {e}")
+        return False, []
+
+def verify_statistics_update():
+    """Verify that source statistics are updating correctly"""
+    print("📊 Verifying source statistics...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/sources", timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            sources = data.get('sources', [])
+            
+            if sources:
+                print(f"✅ Found {len(sources)} sources")
+                
+                # Check for recent activity
+                active_sources = 0
+                for source in sources:
+                    message_count = source.get('message_count', 0)
+                    target_count = source.get('target_count', 0)
+                    fragment_count = source.get('fragment_count', 0)
+                    last_message = source.get('last_message')
+                    
+                    print(f"   📊 Source: {source.get('name', 'Unknown')}")
+                    print(f"      - Message count: {message_count}")
+                    print(f"      - Target count: {target_count}")
+                    print(f"      - Fragment count: {fragment_count}")
+                    print(f"      - Last message: {last_message}")
+                    
+                    if message_count > 0:
+                        active_sources += 1
+                
+                if active_sources > 0:
+                    print(f"✅ Found {active_sources} sources with message activity")
+                    return True
+                else:
+                    print("❌ No sources show message activity")
+                    return False
+            else:
+                print("❌ No sources found")
+                return False
+        else:
+            print(f"❌ Failed to get sources: {response.status_code}")
+            return False
+    except Exception as e:
+        print(f"❌ Statistics verification error: {e}")
+        return False
+
+def test_immediate_vessel_appearance():
+    """Test that vessels appear immediately after upload"""
+    print("⚡ Testing immediate vessel appearance...")
+    try:
+        # Get initial vessel count
+        response = requests.get(f"{BACKEND_URL}/vessels/active", timeout=10)
+        if response.status_code != 200:
+            print(f"❌ Failed to get initial vessel count: {response.status_code}")
+            return False
+        
+        initial_data = response.json()
+        initial_count = len(initial_data.get('vessels', []))
+        print(f"   📊 Initial vessel count: {initial_count}")
+        
+        # Upload test file
+        source_id = upload_vdo_file()
+        if not source_id:
+            print("❌ File upload failed")
+            return False
+        
+        # Check vessels immediately (within 2 seconds)
+        time.sleep(2)
+        
+        response = requests.get(f"{BACKEND_URL}/vessels/active", timeout=10)
+        if response.status_code == 200:
+            new_data = response.json()
+            new_count = len(new_data.get('vessels', []))
+            
+            print(f"   📊 New vessel count: {new_count}")
+            
+            if new_count > initial_count:
+                print(f"✅ Vessels appeared immediately ({new_count - initial_count} new vessels)")
+                return True
+            else:
+                print("❌ No new vessels appeared immediately")
+                return False
+        else:
+            print(f"❌ Failed to check vessels after upload: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Immediate appearance test error: {e}")
+        return False
 
 def run_comprehensive_test():
     """Run the complete test suite"""
