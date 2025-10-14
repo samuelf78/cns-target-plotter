@@ -513,7 +513,7 @@ function App() {
     try {
       await axios.post(`${API}/sources/${sourceId}/pause`);
       toast.success('Stream paused');
-      await loadSources();
+      await loadSources(); // Reload to trigger useEffect
     } catch (error) {
       toast.error('Failed to pause stream');
     }
@@ -523,7 +523,7 @@ function App() {
     try {
       await axios.post(`${API}/sources/${sourceId}/resume`);
       toast.success('Stream resumed');
-      await loadSources();
+      await loadSources(); // Reload to trigger useEffect and restart polling
     } catch (error) {
       toast.error('Failed to resume stream');
     }
