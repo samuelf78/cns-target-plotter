@@ -775,19 +775,96 @@ async def toggle_source(source_id: str):
             logger.info(f"Stopping stream {source_id}")
             del active_streams[source_id]
         
-        # If enabling a stream, restart it by calling start_stream endpoint internally
+        # If enabling a stream, restart it
         if new_status == 'active' and source['source_type'] in ['tcp', 'udp', 'serial']:
-            logger.info(f"Re-enabling stream {source_id} - will restart on next connection check")
-            # The stream will be restarted by the frontend calling /stream/start
-            # Or we can trigger it here by recreating the stream
-            # For now, just mark as active and let frontend handle restart
+            logger.info(f"Restarting stream {source_id}")
+            config = source.get('config', {})
+            
+            # Mark as active in streams dict
+            active_streams[source_id] = True
+            
+            # Start stream handler in background thread
+            if source['source_type'] == 'tcp':
+                def restart_tcp():
+                    try:
+                        from pyais.stream import TCPConnection
+                        conn = TCPConnection(config['host'], port=config['port'])
+                        logger.info(f"TCP stream {source_id} reconnected")
+                        
+                        for msg in conn:
+                            if source_id not in active_streams:
+                                break
+                            try:
+                                raw_msg = msg.raw.decode('utf-8', errors='ignore')
+                                if main_event_loop:
+                                    async def process():
+                                        await process_ais_message(raw_msg, source=f"tcp:{config['host']}:{config['port']}", source_id=source_id)
+                                    future = asyncio.run_coroutine_threadsafe(process(), main_event_loop)
+                                    future.result(timeout=2)
+                            except Exception as e:
+                                logger.error(f"Error processing TCP message: {e}")
+                    except Exception as e:
+                        logger.error(f"TCP stream error: {e}")
+                
+                thread = threading.Thread(target=restart_tcp, daemon=True)
+                thread.start()
+                
+            elif source['source_type'] == 'udp':
+                def restart_udp():
+                    try:
+                        from pyais.stream import UDPReceiver
+                        receiver = UDPReceiver(config['host'], port=config['port'])
+                        logger.info(f"UDP stream {source_id} reconnected")
+                        
+                        for msg in receiver:
+                            if source_id not in active_streams:
+                                break
+                            try:
+                                raw_msg = msg.raw.decode('utf-8', errors='ignore')
+                                if main_event_loop:
+                                    async def process():
+                                        await process_ais_message(raw_msg, source=f"udp:{config['host']}:{config['port']}", source_id=source_id)
+                                    future = asyncio.run_coroutine_threadsafe(process(), main_event_loop)
+                                    future.result(timeout=2)
+                            except Exception as e:
+                                logger.error(f"Error processing UDP message: {e}")
+                    except Exception as e:
+                        logger.error(f"UDP stream error: {e}")
+                
+                thread = threading.Thread(target=restart_udp, daemon=True)
+                thread.start()
+                
+            elif source['source_type'] == 'serial':
+                def restart_serial():
+                    try:
+                        from pyais.stream import SerialStream
+                        stream = SerialStream(config['serial_port'], baudrate=config.get('baudrate', 9600))
+                        logger.info(f"Serial stream {source_id} reconnected")
+                        
+                        for msg in stream:
+                            if source_id not in active_streams:
+                                break
+                            try:
+                                raw_msg = msg.raw.decode('utf-8', errors='ignore')
+                                if main_event_loop:
+                                    async def process():
+                                        await process_ais_message(raw_msg, source=f"serial:{config['serial_port']}", source_id=source_id)
+                                    future = asyncio.run_coroutine_threadsafe(process(), main_event_loop)
+                                    future.result(timeout=2)
+                            except Exception as e:
+                                logger.error(f"Error processing serial message: {e}")
+                    except Exception as e:
+                        logger.error(f"Serial stream error: {e}")
+                
+                thread = threading.Thread(target=restart_serial, daemon=True)
+                thread.start()
         
         await db.sources.update_one(
             {'source_id': source_id},
             {'$set': {'status': new_status}}
         )
         
-        return {'status': new_status, 'requires_restart': new_status == 'active' and source['source_type'] in ['tcp', 'udp', 'serial']}
+        return {'status': new_status}
     except HTTPException:
         raise
     except Exception as e:
