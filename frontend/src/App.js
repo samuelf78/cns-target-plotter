@@ -416,7 +416,13 @@ function App() {
     } catch (error) {
       console.error('Upload error:', error);
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
-      toast.error(`Upload failed: ${errorMsg}`);
+      
+      // Check if it's a duplicate error (409 status)
+      if (error.response?.status === 409) {
+        toast.error(errorMsg, { duration: 5000 });
+      } else {
+        toast.error(`Upload failed: ${errorMsg}`);
+      }
     } finally {
       setUploadProgress(false);
       setUploadStatus('');
