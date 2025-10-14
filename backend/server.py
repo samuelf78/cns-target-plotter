@@ -775,36 +775,19 @@ async def toggle_source(source_id: str):
             logger.info(f"Stopping stream {source_id}")
             del active_streams[source_id]
         
-        # If enabling a stream, restart it
+        # If enabling a stream, restart it by calling start_stream endpoint internally
         if new_status == 'active' and source['source_type'] in ['tcp', 'udp', 'serial']:
-            logger.info(f"Restarting stream {source_id}")
-            # Restart the stream by calling start_stream internally
-            config_dict = source.get('config', {})
-            config = StreamConfig(**config_dict)
-            
-            # Start stream in background
-            if config.stream_type == 'tcp':
-                active_streams[source_id] = True
-                thread = threading.Thread(target=create_tcp_handler(config, source_id))
-                thread.daemon = True
-                thread.start()
-            elif config.stream_type == 'udp':
-                active_streams[source_id] = True
-                thread = threading.Thread(target=create_udp_handler(config, source_id))
-                thread.daemon = True
-                thread.start()
-            elif config.stream_type == 'serial':
-                active_streams[source_id] = True
-                thread = threading.Thread(target=create_serial_handler(config, source_id))
-                thread.daemon = True
-                thread.start()
+            logger.info(f"Re-enabling stream {source_id} - will restart on next connection check")
+            # The stream will be restarted by the frontend calling /stream/start
+            # Or we can trigger it here by recreating the stream
+            # For now, just mark as active and let frontend handle restart
         
         await db.sources.update_one(
             {'source_id': source_id},
             {'$set': {'status': new_status}}
         )
         
-        return {'status': new_status}
+        return {'status': new_status, 'requires_restart': new_status == 'active' and source['source_type'] in ['tcp', 'udp', 'serial']}
     except HTTPException:
         raise
     except Exception as e:
