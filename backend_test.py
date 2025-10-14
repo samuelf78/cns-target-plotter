@@ -474,4 +474,4 @@ def run_real_time_streaming_test():
     return test_results
 
 if __name__ == "__main__":
-    results = run_comprehensive_test()
+    results = run_real_time_streaming_test()
