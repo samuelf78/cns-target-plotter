@@ -444,7 +444,14 @@ function App() {
       await loadSources();
       setShowConnectionPanel(false);
     } catch (error) {
-      toast.error('Failed to start stream');
+      const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
+      
+      // Check if it's a duplicate error (409 status)
+      if (error.response?.status === 409) {
+        toast.error(errorMsg, { duration: 5000 });
+      } else {
+        toast.error(`Failed to start stream: ${errorMsg}`);
+      }
     }
   };
 
