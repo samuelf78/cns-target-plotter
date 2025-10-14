@@ -254,6 +254,8 @@ function App() {
   };
 
   const updateVesselPosition = (posData) => {
+    console.log('WebSocket: Received position update for MMSI', posData.mmsi);
+    
     setVessels(prev => {
       const updated = [...prev];
       const idx = updated.findIndex(v => v.mmsi === posData.mmsi);
@@ -261,7 +263,6 @@ function App() {
         updated[idx].last_position = posData;
       } else {
         // New vessel from WebSocket - add with basic info
-        // Will be enriched by next loadVessels() call
         updated.push({ 
           mmsi: posData.mmsi, 
           last_position: posData,
@@ -269,18 +270,14 @@ function App() {
           source_ids: [posData.source_id]
         });
       }
+      console.log('WebSocket: Updated vessels array, now has', updated.length, 'vessels');
       return updated;
     });
     
-    // Trigger a refresh to get complete vessel data including VDO info
-    // Debounce to avoid too many calls - use ref to persist across re-renders
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-    debounceTimeoutRef.current = setTimeout(() => {
-      loadRecentPositions();
-      debounceTimeoutRef.current = null;
-    }, 2000);
+    // Immediately load complete vessel data including VDO info
+    // Don't debounce - we need real-time updates
+    console.log('WebSocket: Triggering loadRecentPositions for complete data');
+    loadRecentPositions();
   };
 
   const updateVesselInfo = (vesselData) => {
