@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for VDO Type 4 Message Processing
-Tests the fixed Type 4 (Base Station Report) message processing and VDO detection.
+Backend API Testing for Real-Time TCP Streaming
+Tests the fixed TCP/UDP stream real-time broadcasting and WebSocket functionality.
 """
 
 import requests
 import json
 import time
+import websocket
+import threading
 from datetime import datetime
+import subprocess
 
 # Backend URL from frontend .env
 BACKEND_URL = "https://ship-pulse.preview.emergentagent.com/api"
+WS_URL = "wss://ship-pulse.preview.emergentagent.com/api/ws"
 
 def test_api_connection():
     """Test basic API connectivity"""
