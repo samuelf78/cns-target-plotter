@@ -222,16 +222,22 @@ function App() {
   };
 
   const loadRecentPositions = async () => {
+    console.log('loadRecentPositions: Starting to fetch vessels from API');
     try {
       // Load full vessels from active sources to ensure we have latest data
       const response = await axios.get(`${API}/vessels/active?limit=5000`);
       const vessels = response.data.vessels || [];
+      const vdoData = response.data.vdo_data || [];
+      
+      console.log('loadRecentPositions: Received', vessels.length, 'vessels and', vdoData.length, 'VDO positions');
       
       // Update vessels state
       setVessels(vessels);
-      setVdoData(response.data.vdo_data || []);
+      setVdoData(vdoData);
+      
+      console.log('loadRecentPositions: State updated successfully');
     } catch (error) {
-      console.error('Error loading positions:', error);
+      console.error('loadRecentPositions: Error loading positions:', error);
     }
   };
 
