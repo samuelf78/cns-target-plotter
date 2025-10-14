@@ -1117,9 +1117,25 @@ function App() {
                               <div className="source-meta">
                                 <span className="source-type">{source.source_type.toUpperCase()}</span>
                                 <span className="source-count">{source.message_count || 0} msgs</span>
+                                <span className="source-count">{source.target_count || 0} targets</span>
+                                {source.fragment_count > 0 && (
+                                  <span className="source-fragments">{source.fragment_count} fragments</span>
+                                )}
                               </div>
                             </div>
                             <div className="source-controls">
+                              {/* Pause/Resume for streaming sources */}
+                              {['tcp', 'udp', 'serial'].includes(source.source_type) && source.status === 'active' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => source.is_paused ? resumeSource(source.source_id) : pauseSource(source.source_id)}
+                                  title={source.is_paused ? "Resume" : "Pause"}
+                                >
+                                  {source.is_paused ? <Play size={16} /> : <Pause size={16} />}
+                                </Button>
+                              )}
+                              
                               <Switch
                                 checked={source.status === 'active'}
                                 onCheckedChange={() => toggleSource(source.source_id)}
@@ -1133,6 +1149,41 @@ function App() {
                               </Button>
                             </div>
                           </div>
+                          
+                          {/* Message Limit Configuration (for streaming sources) */}
+                          {['tcp', 'udp', 'serial'].includes(source.source_type) && (
+                            <div className="spoof-limit-section">
+                              <label className="spoof-label">Message Limit:</label>
+                              {editingMessageLimit === source.source_id ? (
+                                <div className="spoof-edit">
+                                  <Input
+                                    type="number"
+                                    defaultValue={source.message_limit || 500}
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        updateMessageLimit(source.source_id, parseInt(e.target.value));
+                                      }
+                                    }}
+                                    className="spoof-input"
+                                  />
+                                  <Button size="sm" onClick={() => setEditingMessageLimit(null)}>
+                                    Cancel
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="spoof-display">
+                                  <span className="spoof-value">{source.message_limit || 500} messages</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setEditingMessageLimit(source.source_id)}
+                                  >
+                                    <Settings size={14} />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           
                           {/* Spoof Limit Configuration */}
                           <div className="spoof-limit-section">
