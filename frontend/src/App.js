@@ -132,11 +132,25 @@ function App() {
     loadSources();
     startPolling();
     loadSerialPorts();
+    // Try WebSocket first, but don't rely on it
     connectWebSocket();
+    
+    // CRITICAL FIX: Start aggressive polling for real-time updates
+    // Poll every 3 seconds to catch new TCP stream data
+    const realtimePollingInterval = setInterval(() => {
+      // Only poll if we have active sources
+      if (sources.length > 0) {
+        console.log('Real-time poll: Fetching vessels');
+        loadRecentPositions();
+      }
+    }, 3000);
     
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
+      }
+      if (realtimePollingInterval) {
+        clearInterval(realtimePollingInterval);
       }
       if (wsRef.current) {
         wsRef.current.close();
