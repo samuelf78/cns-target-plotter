@@ -772,7 +772,32 @@ async def toggle_source(source_id: str):
         
         # If disabling a stream, stop it
         if new_status == 'inactive' and source_id in active_streams:
+            logger.info(f"Stopping stream {source_id}")
             del active_streams[source_id]
+        
+        # If enabling a stream, restart it
+        if new_status == 'active' and source['source_type'] in ['tcp', 'udp', 'serial']:
+            logger.info(f"Restarting stream {source_id}")
+            # Restart the stream by calling start_stream internally
+            config_dict = source.get('config', {})
+            config = StreamConfig(**config_dict)
+            
+            # Start stream in background
+            if config.stream_type == 'tcp':
+                active_streams[source_id] = True
+                thread = threading.Thread(target=create_tcp_handler(config, source_id))
+                thread.daemon = True
+                thread.start()
+            elif config.stream_type == 'udp':
+                active_streams[source_id] = True
+                thread = threading.Thread(target=create_udp_handler(config, source_id))
+                thread.daemon = True
+                thread.start()
+            elif config.stream_type == 'serial':
+                active_streams[source_id] = True
+                thread = threading.Thread(target=create_serial_handler(config, source_id))
+                thread.daemon = True
+                thread.start()
         
         await db.sources.update_one(
             {'source_id': source_id},
