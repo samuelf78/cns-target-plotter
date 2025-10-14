@@ -446,10 +446,13 @@ function App() {
     try {
       const response = await axios.patch(`${API}/sources/${sourceId}/toggle`);
       toast.success(`Source ${response.data.status}`);
+      
+      // Force reload sources to trigger useEffect and restart polling
       await loadSources();
       
-      // Debounce vessel reload to avoid sluggishness
+      // Also reload vessels after a short delay
       setTimeout(async () => {
+        console.log('🔴 Toggle: Reloading vessels after toggle');
         await loadVessels();
       }, 500);
     } catch (error) {
