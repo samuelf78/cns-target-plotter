@@ -445,7 +445,34 @@ function App() {
   const toggleSource = async (sourceId) => {
     try {
       const response = await axios.patch(`${API}/sources/${sourceId}/toggle`);
-      toast.success(`Source ${response.data.status}`);
+      const newStatus = response.data.status;
+      const requiresRestart = response.data.requires_restart;
+      
+      toast.success(`Source ${newStatus}`);
+      
+      // If re-enabling a stream source, we need to restart it
+      if (requiresRestart && newStatus === 'active') {
+        console.log('🔴 Stream requires restart, calling restart endpoint');
+        
+        // Find the source to get its config
+        const source = sources.find(s => s.source_id === sourceId);
+        if (source && source.config) {
+          try {
+            // Restart the stream
+            await axios.post(`${API}/stream/start`, {
+              stream_type: source.source_type,
+              host: source.config.host,
+              port: source.config.port,
+              serial_port: source.config.serial_port,
+              baudrate: source.config.baudrate
+            });
+            console.log('🔴 Stream restarted successfully');
+          } catch (error) {
+            console.error('🔴 Failed to restart stream:', error);
+            toast.error('Stream enabled but failed to restart - try manually');
+          }
+        }
+      }
       
       // Force reload sources to trigger useEffect and restart polling
       await loadSources();
