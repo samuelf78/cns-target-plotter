@@ -133,31 +133,44 @@ function App() {
     loadSources();
     startPolling();
     loadSerialPorts();
-    // Try WebSocket first, but don't rely on it
     connectWebSocket();
-    
-    // CRITICAL FIX: Start aggressive polling for real-time updates
-    // Poll every 3 seconds to catch new TCP stream data
-    const realtimePollingInterval = setInterval(() => {
-      // Only poll if we have active sources
-      if (sources.length > 0) {
-        console.log('Real-time poll: Fetching vessels');
-        loadRecentPositions();
-      }
-    }, 3000);
     
     return () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
       }
-      if (realtimePollingInterval) {
-        clearInterval(realtimePollingInterval);
+      if (realtimePollingRef.current) {
+        clearInterval(realtimePollingRef.current);
       }
       if (wsRef.current) {
         wsRef.current.close();
       }
     };
   }, []);
+  
+  // Start real-time polling when sources become active
+  useEffect(() => {
+    const activeSources = sources.filter(s => s.status === 'active');
+    
+    if (activeSources.length > 0 && !realtimePollingRef.current) {
+      console.log('🔴 Starting real-time polling - Active sources detected');
+      realtimePollingRef.current = setInterval(() => {
+        console.log('🔴 Real-time poll: Fetching vessels');
+        loadVessels();
+      }, 2000); // Poll every 2 seconds
+    } else if (activeSources.length === 0 && realtimePollingRef.current) {
+      console.log('🔴 Stopping real-time polling - No active sources');
+      clearInterval(realtimePollingRef.current);
+      realtimePollingRef.current = null;
+    }
+    
+    return () => {
+      if (realtimePollingRef.current) {
+        clearInterval(realtimePollingRef.current);
+        realtimePollingRef.current = null;
+      }
+    };
+  }, [sources]); // Re-run when sources change
 
   const connectWebSocket = () => {
     try {
