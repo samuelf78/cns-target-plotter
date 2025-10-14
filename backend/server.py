@@ -516,6 +516,20 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'data': vessel_doc
             })
         
+        # Update source statistics
+        if source_id:
+            target_count = await db.vessels.count_documents({'source_ids': source_id})
+            await db.sources.update_one(
+                {'source_id': source_id},
+                {
+                    '$inc': {'message_count': 1},
+                    '$set': {
+                        'target_count': target_count,
+                        'last_message': timestamp.isoformat()
+                    }
+                }
+            )
+        
         logger.info(f"Processed AIS message type {msg_type} for MMSI {mmsi}")
         
     except Exception as e:
