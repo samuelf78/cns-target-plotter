@@ -111,11 +111,15 @@ class DataSource(BaseModel):
     source_type: str  # tcp, udp, serial, file
     name: str
     config: Dict[str, Any]
-    status: str = "active"  # active, inactive
+    status: str = "active"  # active, inactive, paused
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     last_message: Optional[datetime] = None
     message_count: int = 0
+    target_count: int = 0  # Number of unique vessels
+    fragment_count: int = 0  # Number of omitted/incomplete messages
+    message_limit: int = 500  # Max messages to keep per source
     spoof_limit_km: float = 500.0  # Default 500km spoof limit
+    is_paused: bool = False  # Pause state for streaming sources
 
 # Helper functions
 def serialize_doc(doc):
