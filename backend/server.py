@@ -544,6 +544,19 @@ async def root():
 async def upload_file(file: UploadFile = File(...), background_tasks: BackgroundTasks = None):
     """Upload and process AIS log file"""
     try:
+        # Check for duplicate filename
+        existing = await db.sources.find_one({
+            'source_type': 'file',
+            'config.filename': file.filename
+        })
+        
+        if existing:
+            logger.warning(f"Duplicate file upload rejected: {file.filename}")
+            raise HTTPException(
+                status_code=409,
+                detail=f"File '{file.filename}' has already been uploaded. Please delete the existing source first if you want to re-upload."
+            )
+        
         # Create source record
         source_id = str(uuid.uuid4())
         source_doc = {
