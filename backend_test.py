@@ -395,21 +395,20 @@ def test_immediate_vessel_appearance():
         print(f"❌ Immediate appearance test error: {e}")
         return False
 
-def run_comprehensive_test():
-    """Run the complete test suite"""
-    print("=" * 60)
-    print("🧪 VDO Type 4 Message Processing Test Suite")
-    print("=" * 60)
+def run_real_time_streaming_test():
+    """Run the real-time TCP streaming test suite"""
+    print("=" * 70)
+    print("🚀 Real-Time TCP Streaming & WebSocket Broadcasting Test Suite")
+    print("=" * 70)
     
     test_results = {
         'api_connection': False,
         'database_clear': False,
-        'file_upload': False,
-        'message_storage': False,
-        'position_storage': False,
-        'base_station_flag': False,
-        'active_vessels': False,
-        'backend_logs': False
+        'websocket_connection': False,
+        'immediate_vessel_appearance': False,
+        'message_processing_logs': False,
+        'statistics_update': False,
+        'active_vessels_endpoint': False
     }
     
     # Test 1: API Connection
@@ -421,30 +420,26 @@ def run_comprehensive_test():
     # Test 2: Clear Database
     test_results['database_clear'] = clear_database()
     
-    # Test 3: Upload VDO File
-    source_id = upload_vdo_file()
-    test_results['file_upload'] = source_id is not None
+    # Test 3: WebSocket Connection
+    ws_success, ws_messages = test_websocket_connection()
+    test_results['websocket_connection'] = ws_success
     
-    # Test 4: Verify Message Storage
-    vessel_data = verify_message_storage()
-    test_results['message_storage'] = vessel_data is not None
+    # Test 4: Test Immediate Vessel Appearance
+    test_results['immediate_vessel_appearance'] = test_immediate_vessel_appearance()
     
-    # Test 5: Verify Position Storage
-    test_results['position_storage'] = verify_position_storage(vessel_data)
+    # Test 5: Check Backend Processing Logs
+    test_results['message_processing_logs'] = check_backend_logs()
     
-    # Test 6: Verify Base Station Flag
-    test_results['base_station_flag'] = verify_base_station_flag(vessel_data)
+    # Test 6: Verify Statistics Update
+    test_results['statistics_update'] = verify_statistics_update()
     
-    # Test 7: Verify Active Vessels
-    test_results['active_vessels'] = verify_active_vessels()
-    
-    # Test 8: Check Backend Logs
-    test_results['backend_logs'] = check_backend_logs()
+    # Test 7: Verify Active Vessels Endpoint
+    test_results['active_vessels_endpoint'] = verify_active_vessels()
     
     # Summary
-    print("\n" + "=" * 60)
-    print("📊 TEST RESULTS SUMMARY")
-    print("=" * 60)
+    print("\n" + "=" * 70)
+    print("📊 REAL-TIME STREAMING TEST RESULTS")
+    print("=" * 70)
     
     passed = 0
     total = len(test_results)
@@ -458,9 +453,23 @@ def run_comprehensive_test():
     print(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 ALL TESTS PASSED - VDO Type 4 processing is working correctly!")
+        print("🎉 ALL TESTS PASSED - Real-time TCP streaming is working correctly!")
+        print("✅ Messages processed immediately")
+        print("✅ WebSocket broadcasts position updates")
+        print("✅ Statistics update correctly")
+        print("✅ Vessels appear in /api/vessels/active within seconds")
     else:
-        print("⚠️ SOME TESTS FAILED - Issues found with VDO Type 4 processing")
+        print("⚠️ SOME TESTS FAILED - Issues found with real-time streaming")
+        
+        # Detailed failure analysis
+        if not test_results['websocket_connection']:
+            print("❌ CRITICAL: WebSocket connection failed - real-time updates won't work")
+        if not test_results['immediate_vessel_appearance']:
+            print("❌ CRITICAL: Vessels don't appear immediately - streaming may not be working")
+        if not test_results['message_processing_logs']:
+            print("❌ WARNING: No message processing logs found - check if messages are being processed")
+        if not test_results['statistics_update']:
+            print("❌ WARNING: Statistics not updating - source tracking may be broken")
     
     return test_results
 
