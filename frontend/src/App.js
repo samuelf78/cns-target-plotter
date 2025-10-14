@@ -154,14 +154,42 @@ function App() {
     
     if (activeSources.length > 0 && !realtimePollingRef.current) {
       console.log('🔴 Starting real-time polling - Active sources detected');
-      realtimePollingRef.current = setInterval(() => {
-        console.log('🔴 Real-time poll: Fetching vessels');
-        loadVessels();
-      }, 2000); // Poll every 2 seconds
+      
+      // Start polling with adaptive interval
+      const startPolling = () => {
+        realtimePollingRef.current = setInterval(() => {
+          console.log('🔴 Real-time poll: Fetching vessels (limit 1000)');
+          // Limit to 1000 most recent vessels to prevent syrup experience
+          axios.get(`${API}/vessels/active?limit=1000`)
+            .then(response => {
+              const vessels = response.data.vessels || [];
+              const vdoData = response.data.vdo_data || [];
+              console.log(`🔴 Received ${vessels.length} vessels, ${vdoData.length} VDO positions`);
+              setVessels(vessels);
+              setVdoData(vdoData);
+              
+              // Adaptive polling: if many vessels, slow down
+              if (vessels.length > 500 && realtimePollingRef.interval === 2000) {
+                console.log('🔴 Many vessels detected, slowing polling to 5 seconds');
+                clearInterval(realtimePollingRef.current);
+                realtimePollingRef.interval = 5000;
+                startPolling();
+              }
+            })
+            .catch(error => {
+              console.error('🔴 Error fetching vessels:', error);
+            });
+        }, realtimePollingRef.interval || 2000);
+      };
+      
+      realtimePollingRef.interval = 2000; // Start with 2 seconds
+      startPolling();
+      
     } else if (activeSources.length === 0 && realtimePollingRef.current) {
       console.log('🔴 Stopping real-time polling - No active sources');
       clearInterval(realtimePollingRef.current);
       realtimePollingRef.current = null;
+      realtimePollingRef.interval = 2000; // Reset interval
     }
     
     return () => {
