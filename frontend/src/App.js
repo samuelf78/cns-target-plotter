@@ -426,6 +426,41 @@ function App() {
     }
   };
 
+  const updateMessageLimit = async (sourceId, limit) => {
+    try {
+      if (limit < 10) {
+        toast.error('Message limit must be at least 10');
+        return;
+      }
+      await axios.patch(`${API}/sources/${sourceId}/message-limit?message_limit=${limit}`);
+      toast.success(`Message limit updated to ${limit} messages`);
+      await loadSources();
+      setEditingMessageLimit(null);
+    } catch (error) {
+      toast.error('Failed to update message limit');
+    }
+  };
+
+  const pauseSource = async (sourceId) => {
+    try {
+      await axios.post(`${API}/sources/${sourceId}/pause`);
+      toast.success('Stream paused');
+      await loadSources();
+    } catch (error) {
+      toast.error('Failed to pause stream');
+    }
+  };
+
+  const resumeSource = async (sourceId) => {
+    try {
+      await axios.post(`${API}/sources/${sourceId}/resume`);
+      toast.success('Stream resumed');
+      await loadSources();
+    } catch (error) {
+      toast.error('Failed to resume stream');
+    }
+  };
+
   const selectVessel = async (vessel) => {
     setSelectedVessel(vessel);
     setShowVesselPanel(true);
