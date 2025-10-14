@@ -126,6 +126,7 @@ function App() {
   const wsRef = useRef(null);
   const pollIntervalRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
+  const realtimePollingRef = useRef(null); // For real-time TCP updates
 
   useEffect(() => {
     // Don't load vessels by default - only load when searching
