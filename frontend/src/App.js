@@ -113,6 +113,9 @@ function App() {
   const [uploadStatus, setUploadStatus] = useState('');
   const [showConnectionPanel, setShowConnectionPanel] = useState(false);
   const [showClearDbDialog, setShowClearDbDialog] = useState(false);
+  const [showDeleteSourceDialog, setShowDeleteSourceDialog] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState(null);
+  const [deleteSourceData, setDeleteSourceData] = useState(false);
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
