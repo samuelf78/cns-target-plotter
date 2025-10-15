@@ -601,8 +601,10 @@ function App() {
         
         // Center map on vessel's last position
         const lastPos = trackData.track[0];
-        if (lastPos.lat && lastPos.lon) {
-          setMapCenter([lastPos.lat, lastPos.lon]);
+        const lat = getDisplayLat(lastPos);
+        const lon = getDisplayLon(lastPos);
+        if (lat && lon) {
+          setMapCenter([lat, lon]);
           setMapZoom(12);
         }
         
