@@ -1026,16 +1026,18 @@ function App() {
 
               {/* Vessel Markers */}
               {vessels.map((vessel) => {
-                if (!vessel.last_position?.lat || !vessel.last_position?.lon) return null;
+                if (!hasValidDisplayPosition(vessel.last_position)) return null;
                 
                 const isBase = isBaseStation(vessel);
                 const posCount = getPositionCount(vessel);
                 const spoofed = isSpoofed(vessel);
+                const vesselLat = getDisplayLat(vessel.last_position);
+                const vesselLon = getDisplayLon(vessel.last_position);
                 
                 return (
                   <Marker
                     key={vessel.mmsi}
-                    position={[vessel.last_position.lat, vessel.last_position.lon]}
+                    position={[vesselLat, vesselLon]}
                     icon={isBase ? createBlueSquareIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed)}
                     eventHandlers={{
                       click: () => selectVessel(vessel)
