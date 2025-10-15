@@ -989,18 +989,44 @@ async def update_message_limit(source_id: str, message_limit: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.delete("/sources/{source_id}")
-async def delete_source(source_id: str):
-    """Remove a data source"""
+async def delete_source(source_id: str, delete_data: bool = False):
+    """Remove a data source and optionally its associated data"""
     try:
         # Stop stream if active
         if source_id in active_streams:
             del active_streams[source_id]
         
+        # If requested, delete all associated data
+        if delete_data:
+            # Delete messages
+            messages_result = await db.messages.delete_many({'source_id': source_id})
+            
+            # Delete positions
+            positions_result = await db.positions.delete_many({'source_id': source_id})
+            
+            # Remove source_id from vessels' source_ids array
+            await db.vessels.update_many(
+                {'source_ids': source_id},
+                {'$pull': {'source_ids': source_id}}
+            )
+            
+            # Delete vessels that have no more sources
+            vessels_result = await db.vessels.delete_many({'source_ids': {'$size': 0}})
+            
+            logger.info(f"Deleted data for source {source_id}: {messages_result.deleted_count} messages, {positions_result.deleted_count} positions, {vessels_result.deleted_count} vessels")
+        
+        # Delete the source itself
         result = await db.sources.delete_one({'source_id': source_id})
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Source not found")
         
-        return {'status': 'deleted'}
+        return {
+            'status': 'deleted',
+            'data_deleted': delete_data,
+            'messages_deleted': messages_result.deleted_count if delete_data else 0,
+            'positions_deleted': positions_result.deleted_count if delete_data else 0,
+            'vessels_deleted': vessels_result.deleted_count if delete_data else 0
+        }
     except HTTPException:
         raise
     except Exception as e:
