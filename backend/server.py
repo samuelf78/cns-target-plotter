@@ -1193,6 +1193,118 @@ async def update_spoof_limits():
         logger.error(f"Error updating spoof limits: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/status")
+async def get_status():
+    """Get system status and statistics"""
+    try:
+        # Count vessels, messages, positions
+        vessel_count = await db.vessels.count_documents({})
+        message_count = await db.messages.count_documents({})
+        position_count = await db.positions.count_documents({})
+        source_count = await db.sources.count_documents({})
+        
+        # Get sources with their message rates
+        sources = await db.sources.find().to_list(1000)
+        source_stats = []
+        
+        for source in sources:
+            stats = {
+                'name': source.get('name'),
+                'type': source.get('source_type'),
+                'status': source.get('status'),
+                'message_count': source.get('message_count', 0),
+                'target_count': source.get('target_count', 0),
+                'fragment_count': source.get('fragment_count', 0),
+                'created_at': source.get('created_at'),
+                'last_message': source.get('last_message')
+            }
+            
+            # Calculate messages per second for active streaming sources
+            if source.get('status') == 'active' and source.get('source_type') in ['tcp', 'udp', 'serial']:
+                created = datetime.fromisoformat(source.get('created_at'))
+                now = datetime.now(timezone.utc)
+                elapsed_seconds = (now - created).total_seconds()
+                if elapsed_seconds > 0:
+                    stats['messages_per_second'] = round(source.get('message_count', 0) / elapsed_seconds, 2)
+                else:
+                    stats['messages_per_second'] = 0
+            
+            source_stats.append(stats)
+        
+        return {
+            'vessels': vessel_count,
+            'messages': message_count,
+            'positions': position_count,
+            'sources': source_count,
+            'source_stats': source_stats
+        }
+    except Exception as e:
+        logger.error(f"Error getting status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/export/xlsx")
+async def export_xlsx():
+    """Export vessel data to Excel file"""
+    try:
+        # Create workbook
+        wb = Workbook()
+        
+        # Vessels sheet
+        ws_vessels = wb.active
+        ws_vessels.title = "Vessels"
+        ws_vessels.append(['MMSI', 'Ship Name', 'Call Sign', 'Vessel Type', 'Country', 'Lat', 'Lon', 'Speed', 'Course', 'Heading', 'Position Count', 'Last Seen', 'Sources'])
+        
+        vessels = await db.vessels.find().to_list(10000)
+        for vessel in vessels:
+            last_pos = vessel.get('last_position', {})
+            ws_vessels.append([
+                vessel.get('mmsi'),
+                vessel.get('ship_name', ''),
+                vessel.get('callsign', ''),
+                vessel.get('ship_type', ''),
+                vessel.get('country', ''),
+                last_pos.get('lat'),
+                last_pos.get('lon'),
+                last_pos.get('speed'),
+                last_pos.get('course'),
+                last_pos.get('heading'),
+                vessel.get('position_count', 0),
+                vessel.get('last_seen'),
+                ', '.join(vessel.get('source_ids', []))
+            ])
+        
+        # Sources sheet
+        ws_sources = wb.create_sheet("Sources")
+        ws_sources.append(['Name', 'Type', 'Status', 'Messages', 'Targets', 'Fragments', 'Created', 'Last Message'])
+        
+        sources = await db.sources.find().to_list(1000)
+        for source in sources:
+            ws_sources.append([
+                source.get('name'),
+                source.get('source_type'),
+                source.get('status'),
+                source.get('message_count', 0),
+                source.get('target_count', 0),
+                source.get('fragment_count', 0),
+                source.get('created_at'),
+                source.get('last_message')
+            ])
+        
+        # Save to bytes
+        output = BytesIO()
+        wb.save(output)
+        output.seek(0)
+        
+        # Return as downloadable file
+        return StreamingResponse(
+            output,
+            media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            headers={'Content-Disposition': f'attachment; filename=ais_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'}
+        )
+    except Exception as e:
+        logger.error(f"Error exporting xlsx: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/serial/ports")
 async def list_serial_ports():
     """List available serial ports"""
