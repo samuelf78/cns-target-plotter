@@ -13,7 +13,7 @@ from datetime import datetime
 import subprocess
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://ship-pulse.preview.emergentagent.com/api"
+BACKEND_URL = "https://marinevis.preview.emergentagent.com/api"
 WS_URL = "wss://ship-pulse.preview.emergentagent.com/api/ws"
 
 def test_api_connection():
