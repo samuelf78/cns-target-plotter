@@ -1536,7 +1536,10 @@ function App() {
                         {vesselHistory.positions.slice(0, 50).map((pos, idx) => (
                           <div key={idx} className="border-b pb-1">
                             <p><strong>Time:</strong> {pos.timestamp}</p>
-                            <p><strong>Pos:</strong> {pos.lat?.toFixed(6)}, {pos.lon?.toFixed(6)}</p>
+                            <p>
+                              <strong>Pos:</strong> {getDisplayLat(pos)?.toFixed(6)}, {getDisplayLon(pos)?.toFixed(6)}
+                              {pos.position_valid === false && <span className="text-yellow-500 ml-1">(using last valid)</span>}
+                            </p>
                             <p><strong>Speed:</strong> {pos.speed} kts, <strong>Course:</strong> {pos.course}°</p>
                             <p><strong>Heading:</strong> {pos.heading}°, <strong>Nav Status:</strong> {pos.nav_status}</p>
                             <p><strong>Repeat Indicator:</strong> {pos.repeat_indicator ?? 'N/A'}</p>
