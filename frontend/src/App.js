@@ -707,6 +707,20 @@ function App() {
     }
   };
 
+  const centerMapOnVessels = () => {
+    if (!mapRef.current || vessels.length === 0) return;
+    
+    // Calculate bounds of all vessels
+    const bounds = vessels
+      .filter(v => v.last_position?.lat && v.last_position?.lon)
+      .map(v => [v.last_position.lat, v.last_position.lon]);
+    
+    if (bounds.length > 0) {
+      mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      console.log('🗺️ Map centered on', bounds.length, 'vessels');
+    }
+  };
+
   const isSpoofed = (vessel) => {
     if (!vessel.last_position?.lat || !vessel.last_position?.lon) return false;
     if (vdoData.length === 0) return false;
