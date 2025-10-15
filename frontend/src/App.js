@@ -1496,6 +1496,56 @@ function App() {
         </DialogContent>
       </Dialog>
 
+      {/* Delete Source Confirmation Dialog */}
+      <Dialog open={showDeleteSourceDialog} onOpenChange={setShowDeleteSourceDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Source?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Do you want to delete the associated data (vessels, positions, messages) from this source?
+            </p>
+            
+            <div className="flex items-center gap-2 p-3 bg-slate-100 rounded">
+              <input
+                type="checkbox"
+                id="deleteData"
+                checked={deleteSourceData}
+                onChange={(e) => setDeleteSourceData(e.target.checked)}
+                className="w-4 h-4"
+              />
+              <label htmlFor="deleteData" className="text-sm cursor-pointer">
+                Also delete all data from this source (vessels, positions, messages)
+              </label>
+            </div>
+            
+            <p className="text-sm text-gray-500 mt-3">
+              {deleteSourceData 
+                ? '⚠️ This will permanently delete all data received from this source.' 
+                : 'ℹ️ Source will be removed but data will be kept in the database.'}
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteSourceDialog(false);
+                setSourceToDelete(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteSource}
+            >
+              Delete Source
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Upload Progress Indicator - Bottom Right */}
       {uploadProgress && (
         <div className="fixed bottom-4 right-4 z-50">
