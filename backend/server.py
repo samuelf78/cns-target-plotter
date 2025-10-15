@@ -627,27 +627,80 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             })
         
         elif msg_type == 18:  # Standard Class B Position Report
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            
+            # Validate position
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            # Determine display coordinates
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                # Try to get last valid position
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    # No previous valid position, leave as None for now
+                    display_lat = None
+                    display_lon = None
+            
             position_doc = {
                 'mmsi': mmsi,
                 'timestamp': timestamp.isoformat(),
-                'lat': decoded.get('lat'),
-                'lon': decoded.get('lon'),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
                 'speed': decoded.get('speed'),
                 'course': decoded.get('course'),
                 'heading': decoded.get('heading'),
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0)
             }
             await db.positions.insert_one(position_doc)
             
-            await db.vessels.update_one(
-                {'mmsi': mmsi},
-                {'$set': {'last_position': position_doc, 'last_seen': timestamp.isoformat()}},
-                upsert=True
-            )
+            # If this is the first valid position, backfill any previous invalid positions
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
             
-            await manager.broadcast({
-                'type': 'position',
-                'data': position_doc
-            })
+            # Only update vessel if we have valid display coordinates
+            if display_lat is not None and display_lon is not None:
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc, 
+                            'last_seen': timestamp.isoformat(),
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                
+                await manager.broadcast({
+                    'type': 'position',
+                    'data': position_doc
+                })
+            else:
+                # No valid position yet, just update metadata
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_seen': timestamp.isoformat(),
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
         
         elif msg_type == 24:  # Static Data Report
             vessel_doc = {
