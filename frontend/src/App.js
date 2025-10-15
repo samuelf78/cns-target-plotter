@@ -742,16 +742,19 @@ function App() {
   };
 
   const isSpoofed = (vessel) => {
-    if (!vessel.last_position?.lat || !vessel.last_position?.lon) return false;
+    if (!hasValidDisplayPosition(vessel.last_position)) return false;
     if (vdoData.length === 0) return false;
+    
+    const vesselLat = getDisplayLat(vessel.last_position);
+    const vesselLon = getDisplayLon(vessel.last_position);
     
     // Check if vessel is beyond spoof limit from any VDO in same source
     for (const vdo of vdoData) {
       // Check if vessel is from same source as VDO
       if (vessel.source_ids && vessel.source_ids.includes(vdo.source_id)) {
         const distance = calculateDistance(
-          vessel.last_position.lat,
-          vessel.last_position.lon,
+          vesselLat,
+          vesselLon,
           vdo.lat,
           vdo.lon
         );
