@@ -959,10 +959,10 @@ function App() {
                           <span className="type-badge">{vessel.ship_type_text}</span>
                         )}
                       </div>
-                      {vessel.last_position && (
+                      {hasValidDisplayPosition(vessel.last_position) && (
                         <div className="vessel-position">
                           <MapPin size={12} />
-                          {vessel.last_position.lat?.toFixed(4)}, {vessel.last_position.lon?.toFixed(4)}
+                          {getDisplayLat(vessel.last_position)?.toFixed(4)}, {getDisplayLon(vessel.last_position)?.toFixed(4)}
                         </div>
                       )}
                     </div>
