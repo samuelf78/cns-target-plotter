@@ -273,6 +273,77 @@ def get_ship_type_text(ship_type: int) -> str:
     }
     return ship_types.get(ship_type, f"Unknown ({ship_type})")
 
+def is_valid_position(lat: float, lon: float) -> bool:
+    """
+    Validate if position is within valid ranges.
+    Invalid positions (e.g., 181, 91) are used to indicate no valid position data.
+    
+    Returns:
+        True if position is valid, False otherwise
+    """
+    if lat is None or lon is None:
+        return False
+    
+    # Valid ranges: lat [-90, 90], lon [-180, 180]
+    if lat < -90 or lat > 90:
+        return False
+    if lon < -180 or lon > 180:
+        return False
+    
+    return True
+
+async def get_last_valid_position(mmsi: str) -> Optional[Dict[str, float]]:
+    """
+    Get the last valid position for a vessel.
+    
+    Returns:
+        Dictionary with 'lat' and 'lon' keys, or None if no valid position found
+    """
+    # Find the most recent valid position for this MMSI
+    last_valid = await db.positions.find_one(
+        {
+            'mmsi': mmsi,
+            'position_valid': True
+        },
+        sort=[('timestamp', -1)]
+    )
+    
+    if last_valid:
+        return {
+            'lat': last_valid.get('display_lat'),
+            'lon': last_valid.get('display_lon')
+        }
+    return None
+
+async def backfill_invalid_positions(mmsi: str, valid_lat: float, valid_lon: float):
+    """
+    Backfill any previous invalid positions with the first valid position coordinates.
+    This ensures smooth trails without position jumps.
+    """
+    # Find all positions for this MMSI that are invalid and don't have display coordinates
+    invalid_positions = await db.positions.find(
+        {
+            'mmsi': mmsi,
+            'position_valid': False,
+            'display_lat': {'$exists': False}
+        }
+    ).to_list(None)
+    
+    if invalid_positions:
+        # Update all invalid positions with the valid coordinates
+        for pos in invalid_positions:
+            await db.positions.update_one(
+                {'_id': pos['_id']},
+                {
+                    '$set': {
+                        'display_lat': valid_lat,
+                        'display_lon': valid_lon,
+                        'backfilled': True
+                    }
+                }
+            )
+        logger.info(f"Backfilled {len(invalid_positions)} invalid positions for MMSI {mmsi}")
+
 async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None):
     """Process and store AIS message"""
     try:
