@@ -340,14 +340,85 @@ frontend:
           
           Pink range circles are correctly drawn around VDO positions showing spoof detection range.
 
+  - task: "Position validation and invalid coordinate handling"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/server.py, /app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          Implemented comprehensive position validation system to handle invalid AIS positions:
+          
+          Backend Changes (server.py):
+          1. Added is_valid_position(lat, lon) function:
+             - Validates lat is in range [-90, 90]
+             - Validates lon is in range [-180, 180]
+             - Returns False for None values
+          
+          2. Added get_last_valid_position(mmsi) function:
+             - Retrieves most recent valid position for a vessel
+             - Returns display_lat and display_lon from last valid position
+          
+          3. Added backfill_invalid_positions(mmsi, valid_lat, valid_lon) function:
+             - Finds all invalid positions without display coordinates
+             - Updates them with the first valid position coordinates
+             - Ensures smooth trails without position jumps
+          
+          4. Modified process_ais_message for types 1-3, 4, and 18:
+             - Stores original_lat/lon as lat/lon (for data integrity)
+             - Validates position using is_valid_position()
+             - Sets display_lat/display_lon based on validation:
+               * If valid: use original coordinates
+               * If invalid with previous valid: use last valid coordinates
+               * If invalid without previous: leave display coords as None
+             - Adds position_valid boolean flag
+             - Calls backfill_invalid_positions when first valid position arrives
+             - Only broadcasts and updates vessel if display coordinates exist
+          
+          5. Updated /vessels/active endpoint:
+             - Queries positions with display_lat/display_lon not None
+             - Uses display coordinates for VDO and VDM distance calculations
+             - Filters out positions without valid display coordinates
+          
+          Frontend Changes (App.js):
+          1. Added helper functions:
+             - getDisplayLat(position): returns display_lat with fallback to lat
+             - getDisplayLon(position): returns display_lon with fallback to lon
+             - hasValidDisplayPosition(position): checks if valid display coords exist
+          
+          2. Updated all map rendering:
+             - Vessel markers use display coordinates
+             - Track polylines filter by hasValidDisplayPosition
+             - VDO markers and circles use display coordinates
+             - Map centering uses display coordinates
+             - Spoof detection uses display coordinates
+          
+          3. Updated UI displays:
+             - Vessel list shows display coordinates
+             - Info panel shows display coordinates with warning if position_valid=false
+             - Position history shows display coords with "(using last valid)" indicator
+          
+          Expected Behavior:
+          - Invalid positions (e.g., lat=91, lon=181) never appear on map
+          - Vessels maintain smooth position trails
+          - If position 2 is invalid, it uses position 1's coordinates
+          - If positions 1-3 are invalid, they all get position 4's coordinates when it arrives
+          - All original data preserved in database for integrity
+          - UI clearly indicates when using last known valid position
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
-  test_sequence: 0
+  test_sequence: 1
   run_ui: false
 
 test_plan:
-  current_focus: []
+  current_focus:
+    - "Position validation and invalid coordinate handling"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
