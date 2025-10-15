@@ -78,6 +78,24 @@ const createArrowIcon = (heading, positionCount, isSpoofed) => {
   });
 };
 
+// Helper functions to get display coordinates (with fallback to original coordinates for backward compatibility)
+const getDisplayLat = (position) => {
+  if (!position) return null;
+  return position.display_lat !== undefined ? position.display_lat : position.lat;
+};
+
+const getDisplayLon = (position) => {
+  if (!position) return null;
+  return position.display_lon !== undefined ? position.display_lon : position.lon;
+};
+
+const hasValidDisplayPosition = (position) => {
+  if (!position) return false;
+  const lat = getDisplayLat(position);
+  const lon = getDisplayLon(position);
+  return lat !== null && lat !== undefined && lon !== null && lon !== undefined && lat !== 0 && lon !== 0;
+};
+
 function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
