@@ -959,6 +959,7 @@ function App() {
               style={{ height: '100%', width: '100%' }}
               zoomControl={true}
             >
+              <MapRefCapture />
               <MapUpdater center={mapCenter} zoom={mapZoom} />
               <TileLayer
                 url={getMapTileUrl()}
