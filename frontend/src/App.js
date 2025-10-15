@@ -674,6 +674,38 @@ function App() {
     return vessel.position_count || 1;
   };
 
+  const loadSystemStatus = async () => {
+    try {
+      const response = await axios.get(`${API}/status`);
+      setSystemStatus(response.data);
+    } catch (error) {
+      console.error('Error loading status:', error);
+      toast.error('Failed to load system status');
+    }
+  };
+
+  const exportToExcel = async () => {
+    try {
+      const response = await axios.get(`${API}/export/xlsx`, {
+        responseType: 'blob'
+      });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ais_data_${new Date().toISOString().slice(0,10)}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      
+      toast.success('Export completed!');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export data');
+    }
+  };
+
   const isSpoofed = (vessel) => {
     if (!vessel.last_position?.lat || !vessel.last_position?.lon) return false;
     if (vdoData.length === 0) return false;
