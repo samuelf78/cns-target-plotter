@@ -16,7 +16,7 @@ import os
 
 # Backend URL from frontend .env
 BACKEND_URL = "https://marinevis.preview.emergentagent.com/api"
-WS_URL = "wss://ship-pulse.preview.emergentagent.com/api/ws"
+WS_URL = "wss://marinevis.preview.emergentagent.com/api/ws"
 
 def test_api_connection():
     """Test basic API connectivity"""
