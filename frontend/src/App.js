@@ -765,6 +765,17 @@ function App() {
     }));
   };
 
+  // Auto-center map when vessels are first loaded after adding a source
+  useEffect(() => {
+    if (vessels.length > 0 && mapRef.current) {
+      // Small delay to ensure map is ready
+      const timer = setTimeout(() => {
+        centerMapOnVessels();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [vessels.length]); // Trigger when vessel count changes
+
   return (
     <div className="App">
       <Toaster position="bottom-right" />
