@@ -422,11 +422,35 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         
         # Process based on message type
         if msg_type in [1, 2, 3]:  # Position Reports (Class A)
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            
+            # Validate position
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            # Determine display coordinates
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                # Try to get last valid position
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    # No previous valid position, leave as None for now
+                    display_lat = None
+                    display_lon = None
+            
             position_doc = {
                 'mmsi': mmsi,
                 'timestamp': timestamp.isoformat(),
-                'lat': decoded.get('lat'),
-                'lon': decoded.get('lon'),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
                 'speed': decoded.get('speed'),
                 'course': decoded.get('course'),
                 'heading': decoded.get('heading'),
@@ -437,29 +461,49 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             }
             await db.positions.insert_one(position_doc)
             
+            # If this is the first valid position, backfill any previous invalid positions
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
+            
             # Get position count
             pos_count = await db.positions.count_documents({'mmsi': mmsi})
             
-            # Update vessel last position and add to sources list
-            await db.vessels.update_one(
-                {'mmsi': mmsi},
-                {
-                    '$set': {
-                        'last_position': position_doc,
-                        'last_seen': timestamp.isoformat(),
-                        'position_count': pos_count,
-                        'country': get_mmsi_country(mmsi)
+            # Only update vessel's last_position if we have valid display coordinates
+            if display_lat is not None and display_lon is not None:
+                # Update vessel last position and add to sources list
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc,
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
                     },
-                    '$addToSet': {'source_ids': source_id}
-                },
-                upsert=True
-            )
-            
-            # Broadcast to WebSocket clients
-            await manager.broadcast({
-                'type': 'position',
-                'data': position_doc
-            })
+                    upsert=True
+                )
+                
+                # Broadcast to WebSocket clients
+                await manager.broadcast({
+                    'type': 'position',
+                    'data': position_doc
+                })
+            else:
+                # No valid position to display yet, just update metadata
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
         
         elif msg_type == 4:  # Base Station Report (VDO)
             # Type 4 has position data but different fields than Type 1-3
