@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Backend API Testing for Real-Time TCP Streaming
-Tests the fixed TCP/UDP stream real-time broadcasting and WebSocket functionality.
+Backend API Testing for Position Validation and Invalid Coordinate Handling
+Tests the position validation system that handles invalid AIS positions.
 """
 
 import requests
@@ -11,6 +11,8 @@ import websocket
 import threading
 from datetime import datetime
 import subprocess
+import tempfile
+import os
 
 # Backend URL from frontend .env
 BACKEND_URL = "https://marinevis.preview.emergentagent.com/api"
