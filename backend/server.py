@@ -1294,36 +1294,40 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
             source_id = source['source_id']
             spoof_limit_km = source.get('spoof_limit_km', 500.0)
             
-            # Get VDO positions for this source
+            # Get VDO positions for this source (only those with valid display coordinates)
             vdo_positions = await db.positions.find({
                 'is_vdo': True,
-                'source_id': source_id
+                'source_id': source_id,
+                'display_lat': {'$exists': True, '$ne': None},
+                'display_lon': {'$exists': True, '$ne': None}
             }).to_list(100)
             
             for vdo_pos in vdo_positions:
-                if not vdo_pos.get('lat') or not vdo_pos.get('lon'):
-                    continue
-                    
-                vdo_lat = vdo_pos['lat']
-                vdo_lon = vdo_pos['lon']
+                # Use display coordinates for plotting
+                vdo_lat = vdo_pos.get('display_lat')
+                vdo_lon = vdo_pos.get('display_lon')
                 vdo_mmsi = vdo_pos.get('mmsi')
+                
+                if not vdo_lat or not vdo_lon:
+                    continue
                 
                 # Get VDM positions from SAME source only
                 # Exclude VDO messages and only get VDMs with repeat_indicator <= 0
+                # Only use positions with valid display coordinates
                 vdm_positions = await db.positions.find({
                     'is_vdo': {'$ne': True},
                     'source_id': source_id,
                     'repeat_indicator': {'$lte': 0},  # Only direct messages, not repeated
-                    'lat': {'$exists': True, '$ne': None, '$ne': 0},
-                    'lon': {'$exists': True, '$ne': None, '$ne': 0}
+                    'display_lat': {'$exists': True, '$ne': None},
+                    'display_lon': {'$exists': True, '$ne': None}
                 }).to_list(10000)
                 
                 # Find furthest VDM within spoof limit (with repeat_indicator <= 0)
                 max_distance_within_limit = 0
                 
                 for vdm_pos in vdm_positions:
-                    vdm_lat = vdm_pos.get('lat')
-                    vdm_lon = vdm_pos.get('lon')
+                    vdm_lat = vdm_pos.get('display_lat')
+                    vdm_lon = vdm_pos.get('display_lon')
                     repeat_ind = vdm_pos.get('repeat_indicator', 0)
                     
                     # Double-check: only valid VDMs (repeat_indicator <= 0)
