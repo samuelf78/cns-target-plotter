@@ -132,6 +132,7 @@ function App() {
   const pollIntervalRef = useRef(null);
   const debounceTimeoutRef = useRef(null);
   const realtimePollingRef = useRef(null); // For real-time TCP updates
+  const mapRef = useRef(null); // For map centering
 
   useEffect(() => {
     // Don't load vessels by default - only load when searching
