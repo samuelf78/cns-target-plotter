@@ -284,21 +284,11 @@ body {
   position: absolute;
   top: 1rem;
   right: 420px;
-  width: 400px;
+  width: 450px;
   max-height: 80vh;
   overflow-y: auto;
   z-index: 2000;
   animation: slideIn 0.3s ease;
-}
-
-.source-manager-panel [data-radix-scroll-area-viewport] {
-  width: 100% !important;
-  max-width: 100%;
-}
-
-.source-manager-panel [data-radix-scroll-area-viewport] > div {
-  width: 100% !important;
-  max-width: 100%;
 }
 
 /* Vessel Info Panel */
