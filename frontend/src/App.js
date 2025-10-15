@@ -825,6 +825,19 @@ function App() {
               Sources ({sources.length})
             </Button>
             
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowStatusPanel(true);
+                loadSystemStatus();
+              }}
+              data-testid="status-button"
+            >
+              <Activity size={16} className="mr-2" />
+              Status
+            </Button>
+            
             <input
               ref={fileInputRef}
               type="file"
