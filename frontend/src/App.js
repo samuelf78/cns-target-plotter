@@ -1640,6 +1640,97 @@ function App() {
           </Card>
         </div>
       )}
+
+      {/* System Status Panel */}
+      <Dialog open={showStatusPanel} onOpenChange={setShowStatusPanel}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>System Status & Statistics</DialogTitle>
+          </DialogHeader>
+          {systemStatus && (
+            <div className="space-y-4">
+              {/* Overall Stats */}
+              <div className="grid grid-cols-4 gap-4">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-blue-600">{systemStatus.vessels}</div>
+                    <div className="text-sm text-gray-600">Vessels</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-green-600">{systemStatus.messages}</div>
+                    <div className="text-sm text-gray-600">Messages</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-orange-600">{systemStatus.positions}</div>
+                    <div className="text-sm text-gray-600">Positions</div>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold text-purple-600">{systemStatus.sources}</div>
+                    <div className="text-sm text-gray-600">Sources</div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Source Statistics */}
+              <Card>
+                <CardHeader>
+                  <h3 className="text-lg font-semibold">Source Statistics</h3>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {systemStatus.source_stats.map((source, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded">
+                        <div>
+                          <div className="font-medium">{source.name}</div>
+                          <div className="text-sm text-gray-600">
+                            {source.type.toUpperCase()} • {source.status}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm">
+                            <span className="font-medium">{source.message_count}</span> msgs • 
+                            <span className="font-medium ml-1">{source.target_count}</span> targets
+                            {source.fragment_count > 0 && (
+                              <span className="text-orange-600 ml-1">• {source.fragment_count} fragments</span>
+                            )}
+                          </div>
+                          {source.messages_per_second !== undefined && (
+                            <div className="text-xs text-green-600 font-medium">
+                              {source.messages_per_second} msg/sec
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={loadSystemStatus}
+                >
+                  Refresh
+                </Button>
+                <Button
+                  onClick={exportToExcel}
+                >
+                  <Download size={16} className="mr-2" />
+                  Export to Excel
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
