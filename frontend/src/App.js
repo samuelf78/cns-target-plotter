@@ -1360,7 +1360,7 @@ function App() {
                   {sources.length === 0 ? (
                     <p className="text-center text-gray-400 py-4">No data sources</p>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2 pr-2">
                       {sources.map(source => (
                         <div key={source.source_id} className="source-item-expanded">
                           <div className="source-main">
