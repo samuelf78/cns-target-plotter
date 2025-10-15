@@ -1050,8 +1050,8 @@ function App() {
               {selectedVessel && vesselTrack.length >= 1 && (
                 <Polyline
                   positions={vesselTrack
-                    .filter(p => p.lat && p.lon && p.lat !== 0 && p.lon !== 0)
-                    .map(p => [p.lat, p.lon])}
+                    .filter(p => hasValidDisplayPosition(p))
+                    .map(p => [getDisplayLat(p), getDisplayLon(p)])}
                   color="#1e40af"
                   weight={3}
                   opacity={0.9}
