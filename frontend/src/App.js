@@ -494,10 +494,26 @@ function App() {
   };
 
   const deleteSource = async (sourceId) => {
+    // Open confirmation dialog
+    setSourceToDelete(sourceId);
+    setDeleteSourceData(false); // Default to not deleting data
+    setShowDeleteSourceDialog(true);
+  };
+
+  const confirmDeleteSource = async () => {
     try {
-      await axios.delete(`${API}/sources/${sourceId}`);
-      toast.success('Source removed');
+      const response = await axios.delete(`${API}/sources/${sourceToDelete}?delete_data=${deleteSourceData}`);
+      
+      if (deleteSourceData && response.data.data_deleted) {
+        toast.success(`Source removed. Deleted ${response.data.messages_deleted} messages, ${response.data.positions_deleted} positions, ${response.data.vessels_deleted} vessels`);
+      } else {
+        toast.success('Source removed (data preserved)');
+      }
+      
       await loadSources();
+      await loadVessels(); // Reload vessels to reflect changes
+      setShowDeleteSourceDialog(false);
+      setSourceToDelete(null);
     } catch (error) {
       toast.error('Failed to remove source');
     }
