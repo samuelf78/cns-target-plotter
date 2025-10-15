@@ -730,10 +730,10 @@ function App() {
   const centerMapOnVessels = () => {
     if (!mapRef.current || vessels.length === 0) return;
     
-    // Calculate bounds of all vessels
+    // Calculate bounds of all vessels with valid display positions
     const bounds = vessels
-      .filter(v => v.last_position?.lat && v.last_position?.lon)
-      .map(v => [v.last_position.lat, v.last_position.lon]);
+      .filter(v => hasValidDisplayPosition(v.last_position))
+      .map(v => [getDisplayLat(v.last_position), getDisplayLon(v.last_position)]);
     
     if (bounds.length > 0) {
       mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
