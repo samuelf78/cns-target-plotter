@@ -895,4 +895,20 @@ def run_real_time_streaming_test():
     return test_results
 
 if __name__ == "__main__":
-    results = run_real_time_streaming_test()
+    # Run position validation tests
+    print("Starting Position Validation Tests...")
+    validation_results = test_position_validation_comprehensive()
+    
+    print("\n" + "=" * 70)
+    print("🏁 TESTING COMPLETE")
+    print("=" * 70)
+    
+    validation_passed = sum(validation_results.values())
+    validation_total = len(validation_results)
+    
+    print(f"Position Validation Tests: {validation_passed}/{validation_total} passed")
+    
+    if validation_passed == validation_total:
+        print("🎉 ALL POSITION VALIDATION TESTS PASSED!")
+    else:
+        print("⚠️ Some position validation tests failed - see details above")
