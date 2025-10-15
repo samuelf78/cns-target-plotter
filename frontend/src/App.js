@@ -116,6 +116,8 @@ function App() {
   const [showDeleteSourceDialog, setShowDeleteSourceDialog] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState(null);
   const [deleteSourceData, setDeleteSourceData] = useState(false);
+  const [showStatusPanel, setShowStatusPanel] = useState(false);
+  const [systemStatus, setSystemStatus] = useState(null);
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
