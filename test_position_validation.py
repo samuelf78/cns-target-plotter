@@ -47,7 +47,10 @@ def clear_database():
 
 def upload_test_file(content, filename):
     """Upload test file content"""
-    print(f"📤 Uploading test file: {filename}")
+    # Make filename unique by adding timestamp
+    timestamp = int(time.time() * 1000)
+    unique_filename = f"{timestamp}_{filename}"
+    print(f"📤 Uploading test file: {unique_filename}")
     try:
         # Create temporary file
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
@@ -56,7 +59,7 @@ def upload_test_file(content, filename):
         
         # Upload the file
         with open(temp_file, 'rb') as f:
-            files = {'file': (filename, f, 'text/plain')}
+            files = {'file': (unique_filename, f, 'text/plain')}
             response = requests.post(f"{BACKEND_URL}/upload", files=files, timeout=30)
         
         # Clean up
