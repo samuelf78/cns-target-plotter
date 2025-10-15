@@ -776,6 +776,13 @@ function App() {
     }
   }, [vessels.length]); // Trigger when vessel count changes
 
+  // Component to capture map reference
+  const MapRefCapture = () => {
+    const map = useMap();
+    mapRef.current = map;
+    return null;
+  };
+
   return (
     <div className="App">
       <Toaster position="bottom-right" />
