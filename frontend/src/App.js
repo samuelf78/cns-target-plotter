@@ -1119,17 +1119,23 @@ function App() {
                       </div>
                     )}
                     
-                    {selectedVessel.last_position && (
+                    {hasValidDisplayPosition(selectedVessel.last_position) && (
                       <>
                         <div className="info-section-title">Current Position</div>
                         <div className="info-row">
                           <span className="info-label">Latitude:</span>
-                          <span className="info-value">{selectedVessel.last_position.lat?.toFixed(6)}</span>
+                          <span className="info-value">{getDisplayLat(selectedVessel.last_position)?.toFixed(6)}</span>
                         </div>
                         <div className="info-row">
                           <span className="info-label">Longitude:</span>
-                          <span className="info-value">{selectedVessel.last_position.lon?.toFixed(6)}</span>
+                          <span className="info-value">{getDisplayLon(selectedVessel.last_position)?.toFixed(6)}</span>
                         </div>
+                        {selectedVessel.last_position.position_valid === false && (
+                          <div className="info-row">
+                            <span className="info-label">Position Status:</span>
+                            <span className="info-value text-yellow-500">Using last known valid position</span>
+                          </div>
+                        )}
                         {selectedVessel.last_position.speed !== null && (
                           <div className="info-row">
                             <span className="info-label">Speed:</span>
