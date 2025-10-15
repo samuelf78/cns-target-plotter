@@ -597,3 +597,44 @@ agent_communication:
       is working perfectly as evidenced by immediate data appearance and correct statistics updates.
       
       REAL-TIME TCP STREAMING IS FULLY FUNCTIONAL AND READY FOR PRODUCTION USE!
+  - agent: "main"
+    message: |
+      🆕 IMPLEMENTED POSITION VALIDATION SYSTEM
+      
+      User requested handling of invalid AIS positions (e.g., lat=91, lon=181) that vessels 
+      report to indicate no valid position data. These should never be plotted on map.
+      
+      IMPLEMENTATION APPROACH:
+      
+      Backend (server.py):
+      - Added position validation checking lat [-90,90] and lon [-180,180]
+      - Store both original coordinates (lat/lon) and display coordinates (display_lat/display_lon)
+      - Added position_valid boolean flag to track validity
+      - Implement backward lookup: invalid position uses last valid position's coordinates
+      - Implement forward backfill: when first valid arrives, backfill all previous invalid positions
+      - Only broadcast and update vessel if display coordinates exist
+      - Updated /vessels/active to filter for valid display coordinates
+      
+      Frontend (App.js):
+      - Added helper functions: getDisplayLat(), getDisplayLon(), hasValidDisplayPosition()
+      - Updated all map rendering to use display coordinates
+      - Added UI indicators for when position_valid=false (yellow text "using last valid")
+      - Filter vessel markers and tracks by hasValidDisplayPosition()
+      
+      SMOOTH TRAIL LOGIC:
+      - Scenario 1: Valid(1) → Invalid(2) → Valid(3)
+        Result: P1 → P1(for P2) → P3 (no jumps)
+      
+      - Scenario 2: Invalid(1) → Invalid(2) → Valid(3)
+        Result: P3(backfilled to P1) → P3(backfilled to P2) → P3 (smooth start)
+      
+      TESTING NEEDED:
+      1. Upload AIS data with invalid positions (lat=91, lon=181)
+      2. Verify invalid positions don't appear as map markers
+      3. Verify vessels with previous valid position maintain that position
+      4. Verify first valid position backfills all previous invalid positions
+      5. Check UI shows position validity status in info panel
+      6. Verify trail remains smooth without position jumps
+      7. Check that all original data is still stored in database
+      
+      Backend has been restarted and is running with hot reload enabled.
