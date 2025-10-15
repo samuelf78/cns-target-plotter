@@ -459,6 +459,9 @@ body {
   color: #ffffff;
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .source-meta {
