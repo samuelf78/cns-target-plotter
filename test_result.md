@@ -108,6 +108,13 @@ user_problem_statement: |
   targets and their range circles from appearing on the map.
   
   Sample VDO message for testing: !ABVDO,1,1,,B,4>kvmbiuHO969Rvgn<:CUW?P0<0m,0*4D
+  
+  NEW REQUIREMENT: Position validation and handling of invalid coordinates.
+  AIS vessels sometimes report out-of-range positions (e.g., 181° East, 91° North) to indicate 
+  no valid position data. These positions should NEVER be plotted on the map. If a previous 
+  valid position exists for the vessel, use that position until a new valid position is received. 
+  If no previous valid position exists, wait for the first valid position and backfill all 
+  previous invalid positions with those coordinates to create smooth trails without jumps.
 
 backend:
   - task: "Fix Type 4 (Base Station Report) message processing"
