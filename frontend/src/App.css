@@ -498,9 +498,11 @@ body {
 
 .source-controls {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.25rem;
   align-items: center;
+  flex: 0 0 auto;
   flex-shrink: 0;
+  min-width: fit-content;
 }
 
 @keyframes slideIn {
