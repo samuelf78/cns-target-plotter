@@ -1037,6 +1037,17 @@ function App() {
               Stream
             </Button>
             
+            <div className="flex items-center gap-2 px-3 py-1 bg-slate-800 rounded border border-slate-600">
+              <Switch
+                checked={showAllTrails}
+                onCheckedChange={setShowAllTrails}
+                id="show-all-trails"
+              />
+              <label htmlFor="show-all-trails" className="text-sm cursor-pointer">
+                Show All Trails
+              </label>
+            </div>
+            
             <Button
               variant="outline"
               size="sm"
