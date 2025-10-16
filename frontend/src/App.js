@@ -1589,6 +1589,22 @@ function App() {
                             )}
                           </div>
                           
+                          {/* Keep Non-Vessel Targets Toggle */}
+                          {source.target_limit > 0 && (
+                            <div className="spoof-limit-section">
+                              <label className="spoof-label">Keep Base Stations & AtoNs:</label>
+                              <div className="spoof-display">
+                                <Switch
+                                  checked={source.keep_non_vessel_targets !== false}
+                                  onCheckedChange={(checked) => updateKeepNonVessel(source.source_id, checked)}
+                                />
+                                <span className="spoof-value text-xs ml-2">
+                                  {source.keep_non_vessel_targets !== false ? 'Always visible' : 'Subject to limit'}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                          
                           {/* Spoof Limit Configuration */}
                           <div className="spoof-limit-section">
                             <label className="spoof-label">Spoof Limit (km):</label>
