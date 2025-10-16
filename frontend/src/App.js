@@ -147,6 +147,7 @@ function App() {
   const [vdoData, setVdoData] = useState([]);
   const [editingSpoofLimit, setEditingSpoofLimit] = useState(null);
   const [editingMessageLimit, setEditingMessageLimit] = useState(null);
+  const [editingTargetLimit, setEditingTargetLimit] = useState(null);
   const [showSourceManager, setShowSourceManager] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
