@@ -476,10 +476,9 @@ body {
 }
 
 .source-info {
-  flex: 1 1 auto;
+  flex: 1 1 200px;
   min-width: 0;
   overflow: hidden;
-  max-width: calc(100% - 100px);
 }
 
 .source-name {
