@@ -982,6 +982,15 @@ function App() {
     }));
   };
 
+  // Load trails when showAllTrails is toggled on
+  useEffect(() => {
+    if (showAllTrails && vessels.length > 0) {
+      loadAllTrails();
+    } else if (!showAllTrails) {
+      setVesselTrails({});
+    }
+  }, [showAllTrails, vessels.length]);
+
   // Component to capture map reference
   const MapRefCapture = () => {
     const map = useMap();
