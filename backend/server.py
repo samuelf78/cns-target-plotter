@@ -1529,8 +1529,13 @@ async def export_xlsx():
             'Decoded - Dimensions (A/B/C/D)', 'Decoded - Draught'
         ])
         
-        # Get all messages
-        messages = await db.messages.find().sort('timestamp', -1).to_list(100000)
+        # Get messages count first
+        message_count = await db.messages.count_documents({})
+        logger.info(f"Total messages in database: {message_count}")
+        
+        # Limit to 500k messages to prevent memory issues
+        max_messages = min(message_count, 500000)
+        messages = await db.messages.find().sort('timestamp', -1).limit(max_messages).to_list(max_messages)
         logger.info(f"Exporting {len(messages)} messages...")
         
         for msg in messages:
