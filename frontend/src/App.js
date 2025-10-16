@@ -812,7 +812,9 @@ function App() {
 
   const handleSearch = async () => {
     if (!searchMMSI && !searchName) {
-      toast.warning('Please enter MMSI, vessel name, or callsign to search');
+      // Clear search results if search is empty
+      setSearchResults([]);
+      toast.info('Search cleared');
       return;
     }
     
@@ -821,15 +823,19 @@ function App() {
         mmsi: searchMMSI || undefined,
         vessel_name: searchName || undefined
       });
-      setVessels(response.data.vessels || []);
       
-      // Also load VDO data after search
-      await loadRecentPositions();
+      // Set search results (don't replace vessels)
+      setSearchResults(response.data.vessels || []);
       
       if (response.data.vessels.length === 0) {
         toast.info('No vessels found matching your search');
       } else {
         toast.success(`Found ${response.data.vessels.length} vessel(s)`);
+        
+        // If one result, auto-select it
+        if (response.data.vessels.length === 1) {
+          selectVessel(response.data.vessels[0]);
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
