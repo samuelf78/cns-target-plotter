@@ -1260,39 +1260,47 @@ function App() {
                 </React.Fragment>
               ))}
 
-              {/* Vessel Markers (excluding base stations which are rendered via VDO data) */}
-              {vessels.map((vessel) => {
-                if (!hasValidDisplayPosition(vessel.last_position)) return null;
-                
-                const isBase = isBaseStation(vessel);
-                const isAton = isAtoN(vessel);
-                const posCount = getPositionCount(vessel);
-                const spoofed = isSpoofed(vessel);
-                const vesselLat = getDisplayLat(vessel.last_position);
-                const vesselLon = getDisplayLon(vessel.last_position);
-                
-                // Skip base stations as they're rendered separately via VDO data
-                if (isBase) return null;
-                
-                // Determine icon: AtoN (yellow diamond) or vessel (triangle)
-                let icon;
-                if (isAton) {
-                  icon = createAtoNIcon();
-                } else {
-                  icon = createTriangleIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
-                }
-                
-                return (
-                  <Marker
-                    key={vessel.mmsi}
-                    position={[vesselLat, vesselLon]}
-                    icon={icon}
-                    eventHandlers={{
-                      click: () => selectVessel(vessel)
-                    }}
-                  />
-                );
-              })}
+              {/* Vessel Markers with Clustering (excluding base stations which are rendered via VDO data) */}
+              <MarkerClusterGroup
+                chunkedLoading
+                maxClusterRadius={50}
+                spiderfyOnMaxZoom={true}
+                showCoverageOnHover={false}
+                zoomToBoundsOnClick={true}
+              >
+                {vessels.map((vessel) => {
+                  if (!hasValidDisplayPosition(vessel.last_position)) return null;
+                  
+                  const isBase = isBaseStation(vessel);
+                  const isAton = isAtoN(vessel);
+                  const posCount = getPositionCount(vessel);
+                  const spoofed = isSpoofed(vessel);
+                  const vesselLat = getDisplayLat(vessel.last_position);
+                  const vesselLon = getDisplayLon(vessel.last_position);
+                  
+                  // Skip base stations as they're rendered separately via VDO data
+                  if (isBase) return null;
+                  
+                  // Determine icon: AtoN (yellow diamond) or vessel (triangle)
+                  let icon;
+                  if (isAton) {
+                    icon = createAtoNIcon();
+                  } else {
+                    icon = createTriangleIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
+                  }
+                  
+                  return (
+                    <Marker
+                      key={vessel.mmsi}
+                      position={[vesselLat, vesselLon]}
+                      icon={icon}
+                      eventHandlers={{
+                        click: () => selectVessel(vessel)
+                      }}
+                    />
+                  );
+                })}
+              </MarkerClusterGroup>
               
               {/* All Vessel Trails (when enabled) - Light Blue Trails */}
               {showAllTrails && Object.entries(vesselTrails).map(([mmsi, trail]) => (
