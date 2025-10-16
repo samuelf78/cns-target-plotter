@@ -1454,11 +1454,12 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                 max_distance_within_limit = 0
                 
                 if is_own_base_station:
-                    # Get VDM positions from SAME source only
-                    # Exclude VDO messages and only get VDMs with repeat_indicator <= 0
+                    # Get mobile vessel positions from SAME source only
+                    # Exclude VDO messages, base stations, and only get VDMs with repeat_indicator <= 0
                     # Only use positions with valid display coordinates
                     vdm_positions = await db.positions.find({
                         'is_vdo': {'$ne': True},
+                        'is_base_station': {'$ne': True},  # Exclude received base stations from range calc
                         'source_id': source_id,
                         'repeat_indicator': {'$lte': 0},  # Only direct messages, not repeated
                         'display_lat': {'$exists': True, '$ne': None},
