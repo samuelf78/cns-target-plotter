@@ -1012,19 +1012,20 @@ function App() {
                 attribution='&copy; OpenStreetMap contributors'
               />
               
-              {/* VDO Positions (Blue Squares) and Range Circles (Pink) */}
+              {/* VDO/Base Station Positions with Color Coding */}
               {vdoData.map((vdo, idx) => (
                 <React.Fragment key={`vdo-${idx}`}>
-                  {/* Blue square for VDO position */}
+                  {/* Green = own base station, Orange = received base station, Asterisk = multi-source */}
                   <Marker
                     position={[vdo.lat, vdo.lon]}
-                    icon={createBlueSquareIcon()}
+                    icon={createBaseStationIcon(vdo.is_own, vdo.multi_source)}
                   >
                     <Popup>
                       <div className="vessel-popup">
-                        <h3>VDO Position (Base Station)</h3>
+                        <h3>{vdo.is_own ? 'Own Base Station (VDO)' : 'Received Base Station'}</h3>
                         <p><strong>MMSI:</strong> {vdo.mmsi}</p>
                         <p><strong>Source:</strong> {vdo.source_name}</p>
+                        {vdo.multi_source && <p><strong>Verified:</strong> {vdo.source_count} sources</p>}
                         <p><strong>Spoof Limit:</strong> {vdo.spoof_limit_km} km</p>
                         <p><strong>Actual Range:</strong> {vdo.radius_km ? vdo.radius_km.toFixed(2) : 0} km</p>
                       </div>
