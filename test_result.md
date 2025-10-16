@@ -679,6 +679,36 @@ agent_communication:
       7. Check that all original data is still stored in database
       
       Backend has been restarted and is running with hot reload enabled.
+  - agent: "main"
+    message: |
+      🔧 FIXED SOURCE MANAGER LAYOUT ISSUE
+      
+      USER REPORTED: Source manager card controls (delete button, toggle switch) were cut off
+      at different zoom levels and screen sizes. Scrollbar placement was also problematic.
+      
+      ROOT CAUSE: Source items were wider than their container (431px item in 420px panel),
+      causing right-side controls to overflow and be hidden. The issue worsened with:
+      - ScrollArea component's internal scrollbar taking up space
+      - Card padding reducing available width
+      - Fixed widths not accounting for content properly
+      
+      FIXES APPLIED (App.css):
+      1. Reduced panel width back to 420px (from 450px)
+      2. Made source-main use flex-wrap to allow controls to wrap if needed
+      3. Set source-info to flex: 1 1 200px for better flexibility
+      4. Reduced padding on source-item-expanded (0.6rem instead of 0.75rem)
+      5. Added proper box-sizing and overflow handling
+      6. Reduced gap in source-controls (0.4rem) and source-meta (0.35rem)
+      7. Used flex-shrink: 0 and margin-left: auto on controls
+      
+      RESULT:
+      ✅ All buttons (toggle, delete) fully visible at 1920x1080
+      ✅ All buttons fully visible at 1366x768 (smaller viewport)
+      ✅ Controls have 31px margin before panel edge (no overflow)
+      ✅ Layout works across different zoom levels
+      ✅ ScrollArea properly constrained within panel
+      
+      Files modified: /app/frontend/src/App.css
   - agent: "testing"
     message: |
       🎉 POSITION VALIDATION TESTING COMPLETED SUCCESSFULLY - ALL CRITICAL FEATURES VERIFIED!
