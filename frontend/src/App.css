@@ -296,8 +296,9 @@ body {
 }
 
 /* Ensure card content doesn't add extra width */
-.source-manager-panel [class*="CardContent"] {
-  padding: 1rem;
+.source-manager-panel [class*="card-content"],
+.source-manager-panel > div > div:last-child {
+  padding: 0.75rem !important;
   overflow: hidden;
 }
 
