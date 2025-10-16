@@ -1272,6 +1272,19 @@ function App() {
                 );
               })}
               
+              {/* All Vessel Trails (when enabled) - Light Blue Trails */}
+              {showAllTrails && Object.entries(vesselTrails).map(([mmsi, trail]) => (
+                <Polyline
+                  key={`trail-${mmsi}`}
+                  positions={trail
+                    .filter(p => hasValidDisplayPosition(p))
+                    .map(p => [getDisplayLat(p), getDisplayLon(p)])}
+                  color="#60a5fa"
+                  weight={2}
+                  opacity={0.6}
+                />
+              ))}
+
               {/* Selected Vessel Track - Dark Blue Trail (chronologically ordered) */}
               {selectedVessel && vesselTrack.length >= 1 && (
                 <Polyline
