@@ -892,21 +892,29 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
                     errors += 1
                     logger.error(f"Error processing line: {e}")
         
-        # Update source with message count
+        # Update source with message count and mark as complete
+        target_count = await db.vessels.count_documents({'source_ids': source_id})
+        
         await db.sources.update_one(
             {'source_id': source_id},
             {'$set': {
                 'message_count': processed,
-                'last_message': datetime.now(timezone.utc).isoformat()
+                'target_count': target_count,
+                'last_message': datetime.now(timezone.utc).isoformat(),
+                'processing_complete': True  # Signal that file processing is done
             }}
         )
+        
+        logger.info(f"File processing complete: {file.filename} - {processed} messages, {target_count} targets")
         
         return {
             'status': 'success',
             'source_id': source_id,
             'filename': file.filename,
             'processed': processed,
-            'errors': errors
+            'errors': errors,
+            'target_count': target_count,
+            'processing_complete': True
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
