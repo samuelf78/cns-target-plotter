@@ -72,8 +72,8 @@ const createAtoNIcon = () => {
   });
 };
 
-// Create direction arrow icon with color (greyed out if spoofed)
-const createArrowIcon = (heading, positionCount, isSpoofed) => {
+// Create simple triangle marker pointing in heading direction (much faster than SVG arrows)
+const createTriangleIcon = (heading, positionCount, isSpoofed) => {
   let color = '#ef4444'; // red - 1 position
   if (positionCount > 2) {
     color = '#22c55e'; // green - more than 2
@@ -89,15 +89,22 @@ const createArrowIcon = (heading, positionCount, isSpoofed) => {
   const rotation = heading || 0;
   const opacity = isSpoofed ? 0.4 : 1.0;
   
+  // Simple CSS triangle - MUCH faster than SVG
   return L.divIcon({
-    html: `<div style="transform: rotate(${rotation}deg); width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; opacity: ${opacity};">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5">
-        <path d="M12 2 L2 22 L12 18 L22 22 Z"/>
-      </svg>
-    </div>`,
-    className: 'custom-arrow-icon',
-    iconSize: [30, 30],
-    iconAnchor: [15, 15]
+    html: `<div style="
+      width: 0; 
+      height: 0; 
+      border-left: 8px solid transparent;
+      border-right: 8px solid transparent;
+      border-bottom: 20px solid ${color};
+      transform: rotate(${rotation}deg);
+      transform-origin: center 13px;
+      opacity: ${opacity};
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+    "></div>`,
+    className: 'custom-triangle-icon',
+    iconSize: [16, 20],
+    iconAnchor: [8, 13]
   });
 };
 
