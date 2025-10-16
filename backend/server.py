@@ -1293,6 +1293,29 @@ async def update_message_limit(source_id: str, message_limit: int):
         logger.error(f"Error updating message limit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.patch("/sources/{source_id}/target-limit")
+async def update_target_limit(source_id: str, target_limit: int):
+    """Update target display limit for a data source (0 = unlimited)"""
+    try:
+        if target_limit < 0:
+            raise HTTPException(status_code=400, detail="Target limit must be 0 (unlimited) or positive")
+        
+        result = await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'target_limit': target_limit}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        logger.info(f"Source {source_id} target limit updated to {target_limit}")
+        return {'status': 'updated', 'target_limit': target_limit}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating target limit: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.delete("/sources/{source_id}")
 async def delete_source(source_id: str, delete_data: bool = False):
     """Remove a data source and optionally its associated data"""
