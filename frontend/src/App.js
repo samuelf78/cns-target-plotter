@@ -999,6 +999,16 @@ function App() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setShowGeoFilter(!showGeoFilter)}
+              className={geoFilter !== 'world' ? 'bg-blue-900' : ''}
+            >
+              <MapPin size={16} className="mr-2" />
+              Geo Filter
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setShowStatusPanel(true);
                 loadSystemStatus();
