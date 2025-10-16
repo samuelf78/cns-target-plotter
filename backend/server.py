@@ -1367,15 +1367,35 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
         if not active_source_ids:
             return {'vessels': [], 'total': 0, 'vdo_data': []}
         
-        # Get total count
-        total = await db.vessels.count_documents({
-            'source_ids': {'$in': active_source_ids}
-        })
+        # Collect vessels per source with target limiting
+        all_vessels_dict = {}  # Use dict to dedupe by MMSI
         
-        # Get vessels that have at least one active source
-        vessels = await db.vessels.find({
-            'source_ids': {'$in': active_source_ids}
-        }).sort('last_seen', -1).skip(skip).limit(limit).to_list(limit)
+        for source in active_sources:
+            source_id = source['source_id']
+            target_limit = source.get('target_limit', 0)  # 0 = unlimited
+            
+            # Get vessels from this source, sorted by most recent
+            query = {'source_ids': source_id}
+            
+            if target_limit > 0:
+                # Limited: get only N most recent targets
+                source_vessels = await db.vessels.find(query).sort('last_seen', -1).limit(target_limit).to_list(target_limit)
+            else:
+                # Unlimited: get all targets from this source
+                source_vessels = await db.vessels.find(query).sort('last_seen', -1).to_list(10000)
+            
+            # Add to combined dict (dedupe by MMSI, keeping most recent last_seen)
+            for vessel in source_vessels:
+                mmsi = vessel['mmsi']
+                if mmsi not in all_vessels_dict or vessel['last_seen'] > all_vessels_dict[mmsi]['last_seen']:
+                    all_vessels_dict[mmsi] = vessel
+        
+        # Convert dict back to list and sort by last_seen
+        vessels = sorted(all_vessels_dict.values(), key=lambda v: v.get('last_seen', ''), reverse=True)
+        
+        # Apply pagination
+        total = len(vessels)
+        vessels = vessels[skip:skip + limit]
         
         # Process VDO positions per source
         vdo_data_list = []
