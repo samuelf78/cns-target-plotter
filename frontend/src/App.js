@@ -260,7 +260,7 @@ function App() {
         realtimePollingRef.current = null;
       }
     };
-  }, [sources]); // Re-run when sources change
+  }, [sources, geoFilter, geoRectangle]); // Re-run when sources or filter changes
 
   const connectWebSocket = () => {
     try {
