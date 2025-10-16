@@ -753,6 +753,30 @@ function App() {
     }
   };
 
+  const loadAllTrails = async () => {
+    if (!showAllTrails) return;
+    
+    try {
+      const trails = {};
+      // Only load trails for mobile vessels (not base stations or AtoNs)
+      const mobileVessels = vessels.filter(v => !isBaseStation(v) && !isAtoN(v));
+      
+      // Limit to prevent performance issues - only load trails for vessels with 2+ positions
+      const vesselsWithHistory = mobileVessels.filter(v => v.position_count >= 2).slice(0, 100); // Max 100 vessels
+      
+      for (const vessel of vesselsWithHistory) {
+        const response = await axios.get(`${API}/vessel/${vessel.mmsi}/track?limit=10`); // Last 10 positions only
+        if (response.data.track && response.data.track.length > 0) {
+          trails[vessel.mmsi] = response.data.track;
+        }
+      }
+      
+      setVesselTrails(trails);
+    } catch (error) {
+      console.error('Error loading all trails:', error);
+    }
+  };
+
   const loadVesselHistory = async (mmsi) => {
     try {
       const response = await axios.get(`${API}/history/${mmsi}`);
