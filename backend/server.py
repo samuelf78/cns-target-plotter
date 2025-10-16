@@ -1478,6 +1478,22 @@ async def get_active_vessels(
         # Convert dict back to list and sort by last_seen
         vessels = sorted(all_vessels_dict.values(), key=lambda v: v.get('last_seen', ''), reverse=True)
         
+        # Apply geographic filter (before pagination)
+        if geo_filter in ["viewport", "rectangle"] and all(x is not None for x in [min_lat, max_lat, min_lon, max_lon]):
+            filtered_vessels = []
+            for vessel in vessels:
+                last_pos = vessel.get('last_position', {})
+                lat = last_pos.get('display_lat') or last_pos.get('lat')
+                lon = last_pos.get('display_lon') or last_pos.get('lon')
+                
+                # Check if vessel is within geographic bounds
+                if lat is not None and lon is not None:
+                    if min_lat <= lat <= max_lat and min_lon <= lon <= max_lon:
+                        filtered_vessels.append(vessel)
+            
+            vessels = filtered_vessels
+            logger.info(f"Geographic filter applied: {len(vessels)} vessels within bounds [{min_lat},{min_lon}] to [{max_lat},{max_lon}]")
+        
         # Apply pagination
         total = len(vessels)
         vessels = vessels[skip:skip + limit]
