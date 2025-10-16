@@ -1490,6 +1490,40 @@ function App() {
                             </div>
                           )}
                           
+                          {/* Target Limit Configuration */}
+                          <div className="spoof-limit-section">
+                            <label className="spoof-label">Target Limit:</label>
+                            {editingTargetLimit === source.source_id ? (
+                              <div className="spoof-edit">
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  defaultValue={source.target_limit || 0}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      updateTargetLimit(source.source_id, parseInt(e.target.value));
+                                    }
+                                  }}
+                                  className="spoof-input"
+                                />
+                                <Button size="sm" onClick={() => setEditingTargetLimit(null)}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="spoof-display">
+                                <span className="spoof-value">{source.target_limit === 0 ? 'Unlimited' : `${source.target_limit} targets`}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setEditingTargetLimit(source.source_id)}
+                                >
+                                  <Settings size={14} />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          
                           {/* Spoof Limit Configuration */}
                           <div className="spoof-limit-section">
                             <label className="spoof-label">Spoof Limit (km):</label>
