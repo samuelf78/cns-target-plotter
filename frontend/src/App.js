@@ -39,6 +39,15 @@ const isBaseStation = (vessel) => {
   return vessel.mmsi && vessel.mmsi.startsWith('00');
 };
 
+// Check if vessel is an AtoN (Aid to Navigation)
+const isAtoN = (vessel) => {
+  if (!vessel) return false;
+  // Check backend flag
+  if (vessel.is_aton) return true;
+  // AtoN MMSIs typically start with 99 (e.g., 992..., 993...)
+  return vessel.mmsi && vessel.mmsi.startsWith('99');
+};
+
 // Create base station icon with color (green = own, orange = received)
 // multiSource: adds white asterisk in center if verified across multiple sources
 const createBaseStationIcon = (isOwn, multiSource = false) => {
