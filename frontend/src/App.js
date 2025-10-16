@@ -1534,40 +1534,60 @@ function App() {
                         <div>
                           <label className="block text-xs mb-1">Min Latitude:</label>
                           <Input
-                            type="number"
-                            step="0.0001"
+                            type="text"
                             value={geoRectangle.minLat}
-                            onChange={(e) => setGeoRectangle({...geoRectangle, minLat: parseFloat(e.target.value)})}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(',', '.');
+                              if (!isNaN(val) || val === '-' || val === '') {
+                                setGeoRectangle({...geoRectangle, minLat: val === '' ? -90 : parseFloat(val) || geoRectangle.minLat});
+                              }
+                            }}
+                            placeholder="-90.0000"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
                         <div>
                           <label className="block text-xs mb-1">Max Latitude:</label>
                           <Input
-                            type="number"
-                            step="0.0001"
+                            type="text"
                             value={geoRectangle.maxLat}
-                            onChange={(e) => setGeoRectangle({...geoRectangle, maxLat: parseFloat(e.target.value)})}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(',', '.');
+                              if (!isNaN(val) || val === '-' || val === '') {
+                                setGeoRectangle({...geoRectangle, maxLat: val === '' ? 90 : parseFloat(val) || geoRectangle.maxLat});
+                              }
+                            }}
+                            placeholder="90.0000"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
                         <div>
                           <label className="block text-xs mb-1">Min Longitude:</label>
                           <Input
-                            type="number"
-                            step="0.0001"
+                            type="text"
                             value={geoRectangle.minLon}
-                            onChange={(e) => setGeoRectangle({...geoRectangle, minLon: parseFloat(e.target.value)})}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(',', '.');
+                              if (!isNaN(val) || val === '-' || val === '') {
+                                setGeoRectangle({...geoRectangle, minLon: val === '' ? -180 : parseFloat(val) || geoRectangle.minLon});
+                              }
+                            }}
+                            placeholder="-180.0000"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
                         <div>
                           <label className="block text-xs mb-1">Max Longitude:</label>
                           <Input
-                            type="number"
-                            step="0.0001"
+                            type="text"
                             value={geoRectangle.maxLon}
-                            onChange={(e) => setGeoRectangle({...geoRectangle, maxLon: parseFloat(e.target.value)})}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(',', '.');
+                              if (!isNaN(val) || val === '-' || val === '') {
+                                setGeoRectangle({...geoRectangle, maxLon: val === '' ? 180 : parseFloat(val) || geoRectangle.maxLon});
+                              }
+                            }}
+                            placeholder="180.0000"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
