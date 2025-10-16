@@ -540,6 +540,7 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'accuracy': decoded.get('accuracy'),
                 'source_id': source_id,
                 'is_vdo': is_vdo,
+                'is_base_station': True,  # Type 4 messages are always base stations
                 'repeat_indicator': decoded.get('repeat', 0),
                 'epfd': decoded.get('epfd'),  # Electronic Position Fixing Device type
                 'raim': decoded.get('raim')  # RAIM flag
