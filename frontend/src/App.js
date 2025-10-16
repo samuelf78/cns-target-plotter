@@ -762,18 +762,29 @@ function App() {
       const mobileVessels = vessels.filter(v => !isBaseStation(v) && !isAtoN(v));
       
       // Limit to prevent performance issues - only load trails for vessels with 2+ positions
-      const vesselsWithHistory = mobileVessels.filter(v => v.position_count >= 2).slice(0, 100); // Max 100 vessels
+      const vesselsWithHistory = mobileVessels.filter(v => v.position_count >= 2).slice(0, 50); // Max 50 vessels
       
-      for (const vessel of vesselsWithHistory) {
-        const response = await axios.get(`${API}/vessel/${vessel.mmsi}/track?limit=10`); // Last 10 positions only
-        if (response.data.track && response.data.track.length > 0) {
-          trails[vessel.mmsi] = response.data.track;
-        }
-      }
+      console.log(`Loading trails for ${vesselsWithHistory.length} vessels...`);
       
+      // Load trails in parallel (faster than sequential)
+      const promises = vesselsWithHistory.map(vessel => 
+        axios.get(`${API}/vessel/${vessel.mmsi}/track?limit=10`)
+          .then(response => {
+            if (response.data.track && response.data.track.length > 1) {
+              trails[vessel.mmsi] = response.data.track;
+            }
+          })
+          .catch(err => console.error(`Error loading trail for ${vessel.mmsi}:`, err))
+      );
+      
+      await Promise.all(promises);
+      
+      console.log(`Loaded ${Object.keys(trails).length} trails successfully`);
       setVesselTrails(trails);
+      toast.success(`Loaded trails for ${Object.keys(trails).length} vessels`);
     } catch (error) {
       console.error('Error loading all trails:', error);
+      toast.error('Failed to load trails');
     }
   };
 
