@@ -1003,14 +1003,14 @@ function App() {
     }));
   };
 
-  // Load trails when showAllTrails is toggled on
+  // Load trails ONLY when showAllTrails is first enabled (not on every vessel update)
   useEffect(() => {
-    if (showAllTrails && vessels.length > 0) {
+    if (showAllTrails) {
       loadAllTrails();
-    } else if (!showAllTrails) {
+    } else {
       setVesselTrails({});
     }
-  }, [showAllTrails, vessels.length]);
+  }, [showAllTrails]); // Removed vessels.length dependency to prevent constant reloading
 
   // Component to capture map reference
   const MapRefCapture = () => {
