@@ -1506,12 +1506,13 @@ async def get_active_vessels(
             spoof_limit_km = source.get('spoof_limit_km', 500.0)
             
             # Get ALL base station positions for this source (both own VDO and received VDM Type 4)
-            # Query for base stations: is_base_station flag OR is_vdo flag
+            # Query for base stations: is_base_station flag OR is_vdo flag, but NOT AtoNs
             vdo_positions = await db.positions.find({
                 '$or': [
                     {'is_base_station': True},
                     {'is_vdo': True}
                 ],
+                'is_aton': {'$ne': True},  # Exclude AtoNs
                 'source_id': source_id,
                 'display_lat': {'$exists': True, '$ne': None},
                 'display_lon': {'$exists': True, '$ne': None}
