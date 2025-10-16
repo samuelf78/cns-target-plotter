@@ -1166,45 +1166,47 @@ function App() {
             </CardContent>
           </Card>
 
-          {/* Vessel List */}
-          <Card className="vessel-list-card">
-            <CardHeader>
-              <CardTitle className="text-sm">
-                <Ship size={16} className="inline mr-2" />
-                Vessels ({vessels.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="vessel-list" data-testid="vessel-list">
-                {vessels.map((vessel) => (
-                  <div
-                    key={vessel.mmsi}
-                    className={`vessel-item ${selectedVessel?.mmsi === vessel.mmsi ? 'selected' : ''}`}
-                    onClick={() => selectVessel(vessel)}
-                    data-testid={`vessel-item-${vessel.mmsi}`}
-                  >
-                    <div className="vessel-info">
-                      <div className="vessel-name">
-                        {vessel.name || `MMSI: ${vessel.mmsi}`}
-                      </div>
-                      <div className="vessel-details">
-                        <span className="mmsi-badge">{vessel.mmsi}</span>
-                        {vessel.ship_type_text && (
-                          <span className="type-badge">{vessel.ship_type_text}</span>
+          {/* Search Results Only */}
+          {searchResults.length > 0 && (
+            <Card className="vessel-list-card">
+              <CardHeader>
+                <CardTitle className="text-sm">
+                  <Search size={16} className="inline mr-2" />
+                  Search Results ({searchResults.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="vessel-list" data-testid="search-results-list">
+                  {searchResults.map((vessel) => (
+                    <div
+                      key={vessel.mmsi}
+                      className={`vessel-item ${selectedVessel?.mmsi === vessel.mmsi ? 'selected' : ''}`}
+                      onClick={() => selectVessel(vessel)}
+                      data-testid={`search-result-${vessel.mmsi}`}
+                    >
+                      <div className="vessel-info">
+                        <div className="vessel-name">
+                          {vessel.name || `MMSI: ${vessel.mmsi}`}
+                        </div>
+                        <div className="vessel-details">
+                          <span className="mmsi-badge">{vessel.mmsi}</span>
+                          {vessel.ship_type_text && (
+                            <span className="type-badge">{vessel.ship_type_text}</span>
+                          )}
+                        </div>
+                        {hasValidDisplayPosition(vessel.last_position) && (
+                          <div className="vessel-position">
+                            <MapPin size={12} />
+                            {getDisplayLat(vessel.last_position)?.toFixed(4)}, {getDisplayLon(vessel.last_position)?.toFixed(4)}
+                          </div>
                         )}
                       </div>
-                      {hasValidDisplayPosition(vessel.last_position) && (
-                        <div className="vessel-position">
-                          <MapPin size={12} />
-                          {getDisplayLat(vessel.last_position)?.toFixed(4)}, {getDisplayLon(vessel.last_position)?.toFixed(4)}
-                        </div>
-                      )}
                     </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </aside>
 
         {/* Map Container */}
