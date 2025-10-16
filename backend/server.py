@@ -124,6 +124,7 @@ class DataSource(BaseModel):
     target_limit: int = 0  # Max targets to display (0 = unlimited)
     spoof_limit_km: float = 500.0  # Default 500km spoof limit
     is_paused: bool = False  # Pause state for streaming sources
+    processing_complete: bool = False  # For file sources: true when fully processed
 
 # Helper functions
 def serialize_doc(doc):
