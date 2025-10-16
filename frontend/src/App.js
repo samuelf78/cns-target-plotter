@@ -362,8 +362,9 @@ function App() {
   const loadRecentPositions = async () => {
     console.log('loadRecentPositions: Starting to fetch vessels from API');
     try {
-      // Load full vessels from active sources to ensure we have latest data
-      const response = await axios.get(`${API}/vessels/active?limit=5000`);
+      // Load full vessels from active sources with geographic filter applied
+      const params = buildGeoFilterParams();
+      const response = await axios.get(`${API}/vessels/active?${params}`);
       const vessels = response.data.vessels || [];
       const vdoData = response.data.vdo_data || [];
       
