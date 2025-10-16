@@ -1264,7 +1264,7 @@ function App() {
               <MarkerClusterGroup
                 chunkedLoading
                 maxClusterRadius={30}
-                disableClusteringAtZoom={11}
+                disableClusteringAtZoom={8}
                 spiderfyOnMaxZoom={true}
                 showCoverageOnHover={false}
                 zoomToBoundsOnClick={true}
