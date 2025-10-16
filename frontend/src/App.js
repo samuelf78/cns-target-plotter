@@ -783,6 +783,22 @@ function App() {
     }
   };
 
+  const autoZoomToSource = async (sourceId) => {
+    if (!mapRef.current) return;
+    
+    // Get vessels from this specific source
+    const sourceVessels = vessels.filter(v => v.source_ids && v.source_ids.includes(sourceId));
+    
+    const bounds = sourceVessels
+      .filter(v => hasValidDisplayPosition(v.last_position))
+      .map(v => [getDisplayLat(v.last_position), getDisplayLon(v.last_position)]);
+    
+    if (bounds.length > 0) {
+      mapRef.current.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+      console.log(`🗺️ Auto-zoomed to ${bounds.length} vessels from source ${sourceId}`);
+    }
+  };
+
   const isSpoofed = (vessel) => {
     if (!hasValidDisplayPosition(vessel.last_position)) return false;
     if (vdoData.length === 0) return false;
