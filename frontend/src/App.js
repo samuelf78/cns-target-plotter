@@ -710,15 +710,6 @@ function App() {
       if (trackData.track && trackData.track.length > 0) {
         setVesselTrack(trackData.track);
         
-        // Center map on vessel's last position
-        const lastPos = trackData.track[0];
-        const lat = getDisplayLat(lastPos);
-        const lon = getDisplayLon(lastPos);
-        if (lat && lon) {
-          setMapCenter([lat, lon]);
-          setMapZoom(12);
-        }
-        
         toast.success(`Loaded ${trackData.count} positions for ${vessel.name || vessel.mmsi}`);
       } else {
         setVesselTrack([]);
