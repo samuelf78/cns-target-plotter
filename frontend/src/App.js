@@ -1543,12 +1543,11 @@ function App() {
                             type="text"
                             value={geoRectangle.minLat}
                             onChange={(e) => {
+                              // Accept comma or dot as decimal separator
                               const val = e.target.value.replace(',', '.');
-                              if (!isNaN(val) || val === '-' || val === '') {
-                                setGeoRectangle({...geoRectangle, minLat: val === '' ? -90 : parseFloat(val) || geoRectangle.minLat});
-                              }
+                              setGeoRectangle({...geoRectangle, minLat: val});
                             }}
-                            placeholder="-90.0000"
+                            placeholder="-90.0000 (optional)"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
@@ -1559,11 +1558,9 @@ function App() {
                             value={geoRectangle.maxLat}
                             onChange={(e) => {
                               const val = e.target.value.replace(',', '.');
-                              if (!isNaN(val) || val === '-' || val === '') {
-                                setGeoRectangle({...geoRectangle, maxLat: val === '' ? 90 : parseFloat(val) || geoRectangle.maxLat});
-                              }
+                              setGeoRectangle({...geoRectangle, maxLat: val});
                             }}
-                            placeholder="90.0000"
+                            placeholder="90.0000 (optional)"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
@@ -1574,11 +1571,9 @@ function App() {
                             value={geoRectangle.minLon}
                             onChange={(e) => {
                               const val = e.target.value.replace(',', '.');
-                              if (!isNaN(val) || val === '-' || val === '') {
-                                setGeoRectangle({...geoRectangle, minLon: val === '' ? -180 : parseFloat(val) || geoRectangle.minLon});
-                              }
+                              setGeoRectangle({...geoRectangle, minLon: val});
                             }}
-                            placeholder="-180.0000"
+                            placeholder="-180.0000 (optional)"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
@@ -1589,11 +1584,9 @@ function App() {
                             value={geoRectangle.maxLon}
                             onChange={(e) => {
                               const val = e.target.value.replace(',', '.');
-                              if (!isNaN(val) || val === '-' || val === '') {
-                                setGeoRectangle({...geoRectangle, maxLon: val === '' ? 180 : parseFloat(val) || geoRectangle.maxLon});
-                              }
+                              setGeoRectangle({...geoRectangle, maxLon: val});
                             }}
-                            placeholder="180.0000"
+                            placeholder="180.0000 (optional)"
                             className="bg-slate-700 border-slate-600"
                           />
                         </div>
