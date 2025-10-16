@@ -1457,6 +1457,9 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                         if distance_km <= spoof_limit_km:
                             max_distance_within_limit = max(max_distance_within_limit, distance_km)
                 
+                # Determine if this is own base station (VDO) or received (VDM Type 4)
+                is_own_base_station = vdo_pos.get('is_vdo', False)
+                
                 vdo_data_list.append({
                     'mmsi': vdo_mmsi,
                     'lat': vdo_lat,
@@ -1465,7 +1468,8 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                     'spoof_limit_km': spoof_limit_km,
                     'source_id': source_id,
                     'source_name': source['name'],
-                    'timestamp': vdo_pos.get('timestamp')
+                    'timestamp': vdo_pos.get('timestamp'),
+                    'is_own': is_own_base_station  # True = own/VDO, False = received/VDM
                 })
         
         logger.info(f"Found {len(vessels)}/{total} vessels, {len(vdo_data_list)} VDO positions")
