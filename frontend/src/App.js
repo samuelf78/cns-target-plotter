@@ -627,6 +627,17 @@ function App() {
     }
   };
 
+  const updateKeepNonVessel = async (sourceId, keep) => {
+    try {
+      await axios.patch(`${API}/sources/${sourceId}/keep-non-vessel?keep_non_vessel=${keep}`);
+      toast.success(`Non-vessel targets ${keep ? 'will always be visible' : 'subject to limit'}`);
+      await loadSources();
+      await loadVessels(); // Reload vessels to reflect new setting
+    } catch (error) {
+      toast.error('Failed to update keep non-vessel setting');
+    }
+  };
+
   const pauseSource = async (sourceId) => {
     try {
       await axios.post(`${API}/sources/${sourceId}/pause`);
