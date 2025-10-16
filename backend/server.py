@@ -1472,6 +1472,20 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                     'is_own': is_own_base_station  # True = own/VDO, False = received/VDM
                 })
         
+        # Count how many sources each base station MMSI appears in
+        base_station_source_counts = {}
+        for vdo in vdo_data_list:
+            mmsi = vdo['mmsi']
+            if mmsi not in base_station_source_counts:
+                base_station_source_counts[mmsi] = set()
+            base_station_source_counts[mmsi].add(vdo['source_id'])
+        
+        # Add multi_source flag to VDO data
+        for vdo in vdo_data_list:
+            mmsi = vdo['mmsi']
+            vdo['source_count'] = len(base_station_source_counts.get(mmsi, set()))
+            vdo['multi_source'] = vdo['source_count'] > 1
+        
         logger.info(f"Found {len(vessels)}/{total} vessels, {len(vdo_data_list)} VDO positions")
         
         serialized_vessels = [serialize_doc(v) for v in vessels]
