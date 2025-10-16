@@ -516,12 +516,6 @@ function App() {
         await loadVessels();
         await loadRecentPositions();
         await loadSources();
-        
-        // Auto-zoom to newly uploaded file targets (only once)
-        if (sourceId && targetCount > 0 && !autoZoomProcessedSources.current.has(sourceId)) {
-          autoZoomProcessedSources.current.add(sourceId);
-          setTimeout(() => autoZoomToSource(sourceId), 500);
-        }
       } else {
         toast.warning('No valid AIS messages found in file');
       }
