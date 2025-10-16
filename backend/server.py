@@ -1427,9 +1427,13 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
             source_id = source['source_id']
             spoof_limit_km = source.get('spoof_limit_km', 500.0)
             
-            # Get VDO positions for this source (only those with valid display coordinates)
+            # Get ALL base station positions for this source (both own VDO and received VDM Type 4)
+            # Query for base stations: is_base_station flag OR is_vdo flag
             vdo_positions = await db.positions.find({
-                'is_vdo': True,
+                '$or': [
+                    {'is_base_station': True},
+                    {'is_vdo': True}
+                ],
                 'source_id': source_id,
                 'display_lat': {'$exists': True, '$ne': None},
                 'display_lon': {'$exists': True, '$ne': None}
