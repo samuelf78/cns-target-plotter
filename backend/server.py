@@ -1327,6 +1327,26 @@ async def update_target_limit(source_id: str, target_limit: int):
         logger.error(f"Error updating target limit: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.patch("/sources/{source_id}/keep-non-vessel")
+async def update_keep_non_vessel(source_id: str, keep_non_vessel: bool):
+    """Update keep non-vessel targets setting for a data source"""
+    try:
+        result = await db.sources.update_one(
+            {'source_id': source_id},
+            {'$set': {'keep_non_vessel_targets': keep_non_vessel}}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Source not found")
+        
+        logger.info(f"Source {source_id} keep_non_vessel_targets updated to {keep_non_vessel}")
+        return {'status': 'updated', 'keep_non_vessel_targets': keep_non_vessel}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating keep_non_vessel_targets: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.delete("/sources/{source_id}")
 async def delete_source(source_id: str, delete_data: bool = False):
     """Remove a data source and optionally its associated data"""
