@@ -284,11 +284,15 @@ body {
   position: absolute;
   top: 1rem;
   right: 420px;
-  width: 450px;
+  width: 420px;
   max-height: 80vh;
-  overflow-y: auto;
+  overflow: visible;
   z-index: 2000;
   animation: slideIn 0.3s ease;
+}
+
+.source-manager-panel .space-y-2 {
+  width: 100%;
 }
 
 /* Vessel Info Panel */
