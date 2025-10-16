@@ -1476,9 +1476,10 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                     continue
                 
                 # Only calculate range circles for OWN base stations (VDO), not received ones
+                # Skip range calculation if source has multiple base stations at different locations
                 max_distance_within_limit = 0
                 
-                if is_own_base_station:
+                if is_own_base_station and not has_multiple_base_stations:
                     # Get mobile vessel positions from SAME source only
                     # Exclude VDO messages, base stations, and only get VDMs with repeat_indicator <= 0
                     # Only use positions with valid display coordinates
