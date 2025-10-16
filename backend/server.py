@@ -1606,6 +1606,20 @@ async def get_active_vessels(
                     'is_own': is_own_base_station  # True = own/VDO, False = received/VDM
                 })
         
+        # Apply geographic filter to VDO data (base stations)
+        if geo_filter in ["viewport", "rectangle"] and all(x is not None for x in [min_lat, max_lat, min_lon, max_lon]):
+            filtered_vdo = []
+            for vdo in vdo_data_list:
+                lat = vdo.get('lat')
+                lon = vdo.get('lon')
+                
+                if lat is not None and lon is not None:
+                    if min_lat <= lat <= max_lat and min_lon <= lon <= max_lon:
+                        filtered_vdo.append(vdo)
+            
+            vdo_data_list = filtered_vdo
+            logger.info(f"Geographic filter applied to VDO: {len(vdo_data_list)} base stations within bounds")
+        
         # Count how many sources each base station MMSI appears in
         base_station_source_counts = {}
         for vdo in vdo_data_list:
