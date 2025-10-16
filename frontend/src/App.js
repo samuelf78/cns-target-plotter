@@ -1481,6 +1481,108 @@ function App() {
           </div>
         )}
 
+        {/* Geographic Filter Panel */}
+        {showGeoFilter && (
+          <div className="geo-filter-panel">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Geographic Filter</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGeoFilter(false)}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Filter Mode:</label>
+                    <select
+                      value={geoFilter}
+                      onChange={(e) => setGeoFilter(e.target.value)}
+                      className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
+                    >
+                      <option value="world">Whole World (No Filter)</option>
+                      <option value="viewport">Current Viewport Only</option>
+                      <option value="rectangle">Custom Rectangle</option>
+                    </select>
+                  </div>
+
+                  {geoFilter === 'viewport' && (
+                    <div className="bg-blue-900/30 border border-blue-700 rounded p-3">
+                      <p className="text-sm text-blue-200">
+                        ✓ Only targets within the current map view will be displayed.
+                        Pan and zoom the map to adjust the filter area.
+                      </p>
+                    </div>
+                  )}
+
+                  {geoFilter === 'rectangle' && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs mb-1">Min Latitude:</label>
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            value={geoRectangle.minLat}
+                            onChange={(e) => setGeoRectangle({...geoRectangle, minLat: parseFloat(e.target.value)})}
+                            className="bg-slate-700 border-slate-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs mb-1">Max Latitude:</label>
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            value={geoRectangle.maxLat}
+                            onChange={(e) => setGeoRectangle({...geoRectangle, maxLat: parseFloat(e.target.value)})}
+                            className="bg-slate-700 border-slate-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs mb-1">Min Longitude:</label>
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            value={geoRectangle.minLon}
+                            onChange={(e) => setGeoRectangle({...geoRectangle, minLon: parseFloat(e.target.value)})}
+                            className="bg-slate-700 border-slate-600"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs mb-1">Max Longitude:</label>
+                          <Input
+                            type="number"
+                            step="0.0001"
+                            value={geoRectangle.maxLon}
+                            onChange={(e) => setGeoRectangle({...geoRectangle, maxLon: parseFloat(e.target.value)})}
+                            className="bg-slate-700 border-slate-600"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      loadVessels();
+                      toast.success('Geographic filter applied');
+                    }}
+                  >
+                    Apply Filter
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Source Manager Panel */}
         {showSourceManager && (
           <div className="source-manager-panel">
