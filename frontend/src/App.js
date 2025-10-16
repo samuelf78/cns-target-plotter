@@ -1048,21 +1048,33 @@ function App() {
                 </React.Fragment>
               ))}
 
-              {/* Vessel Markers */}
+              {/* Vessel Markers (excluding base stations which are rendered via VDO data) */}
               {vessels.map((vessel) => {
                 if (!hasValidDisplayPosition(vessel.last_position)) return null;
                 
                 const isBase = isBaseStation(vessel);
+                const isAton = isAtoN(vessel);
                 const posCount = getPositionCount(vessel);
                 const spoofed = isSpoofed(vessel);
                 const vesselLat = getDisplayLat(vessel.last_position);
                 const vesselLon = getDisplayLon(vessel.last_position);
                 
+                // Skip base stations as they're rendered separately via VDO data
+                if (isBase) return null;
+                
+                // Determine icon: AtoN (yellow diamond) or vessel (arrow)
+                let icon;
+                if (isAton) {
+                  icon = createAtoNIcon();
+                } else {
+                  icon = createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
+                }
+                
                 return (
                   <Marker
                     key={vessel.mmsi}
                     position={[vesselLat, vesselLon]}
-                    icon={isBase ? createBlueSquareIcon() : createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed)}
+                    icon={icon}
                     eventHandlers={{
                       click: () => selectVessel(vessel)
                     }}
