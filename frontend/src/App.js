@@ -1212,6 +1212,7 @@ function App() {
               zoom={mapZoom}
               style={{ height: '100%', width: '100%' }}
               zoomControl={true}
+              preferCanvas={true}
             >
               <MapRefCapture />
               <MapUpdater center={mapCenter} zoom={mapZoom} />
