@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import "@/App.css";
 import axios from "axios";
 import { MapContainer, TileLayer, Marker, Polyline, Popup, Circle, useMap } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 // Removed socket.io - using native WebSocket and polling
