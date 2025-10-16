@@ -326,23 +326,29 @@ function App() {
     setWsConnected(true);
   };
 
+  // Helper function to build geographic filter parameters
+  const buildGeoFilterParams = () => {
+    let params = 'limit=5000';
+    
+    // Add geographic filter parameters
+    if (geoFilter === 'viewport' && mapRef.current) {
+      const bounds = mapRef.current.getBounds();
+      const sw = bounds.getSouthWest();
+      const ne = bounds.getNorthEast();
+      
+      params += `&geo_filter=viewport&min_lat=${sw.lat}&max_lat=${ne.lat}&min_lon=${sw.lng}&max_lon=${ne.lng}`;
+    } else if (geoFilter === 'rectangle') {
+      params += `&geo_filter=rectangle&min_lat=${geoRectangle.minLat}&max_lat=${geoRectangle.maxLat}&min_lon=${geoRectangle.minLon}&max_lon=${geoRectangle.maxLon}`;
+    } else {
+      params += '&geo_filter=world';
+    }
+    
+    return params;
+  };
+
   const loadVessels = async () => {
     try {
-      let params = 'limit=5000';
-      
-      // Add geographic filter parameters
-      if (geoFilter === 'viewport' && mapRef.current) {
-        const bounds = mapRef.current.getBounds();
-        const sw = bounds.getSouthWest();
-        const ne = bounds.getNorthEast();
-        
-        params += `&geo_filter=viewport&min_lat=${sw.lat}&max_lat=${ne.lat}&min_lon=${sw.lng}&max_lon=${ne.lng}`;
-      } else if (geoFilter === 'rectangle') {
-        params += `&geo_filter=rectangle&min_lat=${geoRectangle.minLat}&max_lat=${geoRectangle.maxLat}&min_lon=${geoRectangle.minLon}&max_lon=${geoRectangle.maxLon}`;
-      } else {
-        params += '&geo_filter=world';
-      }
-      
+      const params = buildGeoFilterParams();
       const response = await axios.get(`${API}/vessels/active?${params}`);
       setVessels(response.data.vessels || []);
       setVdoData(response.data.vdo_data || []);
