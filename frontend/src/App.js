@@ -174,6 +174,10 @@ function App() {
   });
   const [showGeoFilter, setShowGeoFilter] = useState(false);
   
+  // Display options
+  const [showAllTrails, setShowAllTrails] = useState(false);
+  const [vesselTrails, setVesselTrails] = useState({}); // {mmsi: [positions]}
+  
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
   const [tcpHost, setTcpHost] = useState('localhost');
