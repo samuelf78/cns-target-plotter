@@ -295,6 +295,22 @@ body {
   width: 100%;
 }
 
+/* Ensure card content doesn't add extra width */
+.source-manager-panel [class*="CardContent"] {
+  padding: 1rem;
+  overflow: hidden;
+}
+
+/* Constrain ScrollArea to prevent overflow */
+.source-manager-panel [data-radix-scroll-area-viewport] {
+  max-width: 100%;
+}
+
+.source-manager-panel [data-radix-scroll-area-viewport] > div {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Vessel Info Panel */
 .vessel-info-panel {
   position: absolute;
