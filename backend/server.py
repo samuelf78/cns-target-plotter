@@ -1407,13 +1407,36 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
         for source in active_sources:
             source_id = source['source_id']
             target_limit = source.get('target_limit', 0)  # 0 = unlimited
+            keep_non_vessel = source.get('keep_non_vessel_targets', True)
             
             # Get vessels from this source, sorted by most recent
             query = {'source_ids': source_id}
             
             if target_limit > 0:
-                # Limited: get only N most recent targets
-                source_vessels = await db.vessels.find(query).sort('last_seen', -1).limit(target_limit).to_list(target_limit)
+                if keep_non_vessel:
+                    # Get all non-vessel targets (base stations, AtoNs) - unlimited
+                    non_vessel_query = {
+                        'source_ids': source_id,
+                        '$or': [
+                            {'is_base_station': True},
+                            {'is_aton': True}
+                        ]
+                    }
+                    non_vessel_targets = await db.vessels.find(non_vessel_query).to_list(1000)
+                    
+                    # Get only mobile vessel targets - limited
+                    vessel_query = {
+                        'source_ids': source_id,
+                        'is_base_station': {'$ne': True},
+                        'is_aton': {'$ne': True}
+                    }
+                    mobile_vessels = await db.vessels.find(vessel_query).sort('last_seen', -1).limit(target_limit).to_list(target_limit)
+                    
+                    # Combine both lists
+                    source_vessels = non_vessel_targets + mobile_vessels
+                else:
+                    # Limited: get only N most recent targets (all types)
+                    source_vessels = await db.vessels.find(query).sort('last_seen', -1).limit(target_limit).to_list(target_limit)
             else:
                 # Unlimited: get all targets from this source
                 source_vessels = await db.vessels.find(query).sort('last_seen', -1).to_list(10000)
