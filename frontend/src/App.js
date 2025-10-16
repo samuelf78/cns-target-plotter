@@ -167,10 +167,10 @@ function App() {
   // Geographic filter settings
   const [geoFilter, setGeoFilter] = useState('world'); // 'world', 'viewport', 'rectangle'
   const [geoRectangle, setGeoRectangle] = useState({
-    minLat: -90,
-    maxLat: 90,
-    minLon: -180,
-    maxLon: 180
+    minLat: '',
+    maxLat: '',
+    minLon: '',
+    maxLon: ''
   });
   const [showGeoFilter, setShowGeoFilter] = useState(false);
   
