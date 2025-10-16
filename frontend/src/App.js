@@ -1270,12 +1270,12 @@ function App() {
                 // Skip base stations as they're rendered separately via VDO data
                 if (isBase) return null;
                 
-                // Determine icon: AtoN (yellow diamond) or vessel (arrow)
+                // Determine icon: AtoN (yellow diamond) or vessel (triangle)
                 let icon;
                 if (isAton) {
                   icon = createAtoNIcon();
                 } else {
-                  icon = createArrowIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
+                  icon = createTriangleIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
                 }
                 
                 return (
