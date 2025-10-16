@@ -160,6 +160,8 @@ function App() {
   const [deleteSourceData, setDeleteSourceData] = useState(false);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [systemStatus, setSystemStatus] = useState(null);
+  const [knownSourceIds, setKnownSourceIds] = useState(new Set());
+  const [streamAutoZoomTracking, setStreamAutoZoomTracking] = useState(new Map()); // Track stream zoom status
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
