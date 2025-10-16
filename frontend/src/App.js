@@ -452,14 +452,21 @@ function App() {
       
       const processed = response.data.processed || 0;
       const errors = response.data.errors || 0;
+      const sourceId = response.data.source_id;
+      const targetCount = response.data.target_count || 0;
       
       setUploadStatus(`Processed ${processed} messages`);
       
       if (processed > 0) {
-        toast.success(`Processed ${processed} messages${errors > 0 ? ` (${errors} errors)` : ''}`);
+        toast.success(`Processed ${processed} messages, ${targetCount} targets${errors > 0 ? ` (${errors} errors)` : ''}`);
         await loadVessels();
         await loadRecentPositions();
         await loadSources();
+        
+        // Auto-zoom to newly uploaded file targets
+        if (sourceId && targetCount > 0) {
+          setTimeout(() => autoZoomToSource(sourceId), 500);
+        }
       } else {
         toast.warning('No valid AIS messages found in file');
       }
