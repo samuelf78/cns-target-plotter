@@ -160,8 +160,9 @@ function App() {
   const [deleteSourceData, setDeleteSourceData] = useState(false);
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [systemStatus, setSystemStatus] = useState(null);
-  const [knownSourceIds, setKnownSourceIds] = useState(new Set());
-  const [streamAutoZoomTracking, setStreamAutoZoomTracking] = useState(new Map()); // Track stream zoom status
+  
+  // Use refs for auto-zoom tracking to persist across re-renders
+  const autoZoomProcessedSources = useRef(new Set());
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
