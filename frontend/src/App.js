@@ -164,6 +164,16 @@ function App() {
   // Use refs for auto-zoom tracking to persist across re-renders
   const autoZoomProcessedSources = useRef(new Set());
   
+  // Geographic filter settings
+  const [geoFilter, setGeoFilter] = useState('world'); // 'world', 'viewport', 'rectangle'
+  const [geoRectangle, setGeoRectangle] = useState({
+    minLat: -90,
+    maxLat: 90,
+    minLon: -180,
+    maxLon: 180
+  });
+  const [showGeoFilter, setShowGeoFilter] = useState(false);
+  
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
   const [tcpHost, setTcpHost] = useState('localhost');
