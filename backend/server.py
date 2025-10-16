@@ -121,6 +121,7 @@ class DataSource(BaseModel):
     target_count: int = 0  # Number of unique vessels
     fragment_count: int = 0  # Number of omitted/incomplete messages
     message_limit: int = 500  # Max messages to keep per source
+    target_limit: int = 0  # Max targets to display (0 = unlimited)
     spoof_limit_km: float = 500.0  # Default 500km spoof limit
     is_paused: bool = False  # Pause state for streaming sources
 
