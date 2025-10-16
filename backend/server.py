@@ -1467,6 +1467,11 @@ async def export_xlsx():
         # Create workbook
         wb = Workbook()
         
+        # Create source lookup first
+        sources = await db.sources.find().to_list(1000)
+        source_lookup = {s['source_id']: s.get('name', 'Unknown') for s in sources}
+        logger.info(f"Loaded {len(sources)} sources")
+        
         # Sheet 1: All Positions (Historical)
         ws_positions = wb.active
         ws_positions.title = "All Positions"
@@ -1479,13 +1484,14 @@ async def export_xlsx():
             'Source ID', 'Source Name'
         ])
         
-        # Get all positions with source info
-        positions = await db.positions.find().sort('timestamp', -1).to_list(100000)
-        logger.info(f"Exporting {len(positions)} positions...")
+        # Get positions count first
+        position_count = await db.positions.count_documents({})
+        logger.info(f"Total positions in database: {position_count}")
         
-        # Create source lookup
-        sources = await db.sources.find().to_list(1000)
-        source_lookup = {s['source_id']: s.get('name', 'Unknown') for s in sources}
+        # Limit to 500k positions to prevent memory issues
+        max_positions = min(position_count, 500000)
+        positions = await db.positions.find().sort('timestamp', -1).limit(max_positions).to_list(max_positions)
+        logger.info(f"Exporting {len(positions)} positions...")
         
         for pos in positions:
             ws_positions.append([
