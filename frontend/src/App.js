@@ -219,9 +219,10 @@ function App() {
       // Start polling with adaptive interval
       const startPolling = () => {
         realtimePollingRef.current = setInterval(() => {
-          console.log('🔴 Real-time poll: Fetching vessels (limit 1000)');
-          // Limit to 1000 most recent vessels to prevent syrup experience
-          axios.get(`${API}/vessels/active?limit=1000`)
+          console.log('🔴 Real-time poll: Fetching vessels with geographic filter');
+          // Use the same filter params as loadVessels
+          const params = buildGeoFilterParams().replace('limit=5000', 'limit=1000');
+          axios.get(`${API}/vessels/active?${params}`)
             .then(response => {
               const vessels = response.data.vessels || [];
               const vdoData = response.data.vdo_data || [];
