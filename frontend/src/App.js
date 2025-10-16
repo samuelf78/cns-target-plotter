@@ -338,7 +338,13 @@ function App() {
       
       params += `&geo_filter=viewport&min_lat=${sw.lat}&max_lat=${ne.lat}&min_lon=${sw.lng}&max_lon=${ne.lng}`;
     } else if (geoFilter === 'rectangle') {
-      params += `&geo_filter=rectangle&min_lat=${geoRectangle.minLat}&max_lat=${geoRectangle.maxLat}&min_lon=${geoRectangle.minLon}&max_lon=${geoRectangle.maxLon}`;
+      // Use defaults if empty
+      const minLat = geoRectangle.minLat === '' ? -90 : parseFloat(geoRectangle.minLat);
+      const maxLat = geoRectangle.maxLat === '' ? 90 : parseFloat(geoRectangle.maxLat);
+      const minLon = geoRectangle.minLon === '' ? -180 : parseFloat(geoRectangle.minLon);
+      const maxLon = geoRectangle.maxLon === '' ? 180 : parseFloat(geoRectangle.maxLon);
+      
+      params += `&geo_filter=rectangle&min_lat=${minLat}&max_lat=${maxLat}&min_lon=${minLon}&max_lon=${maxLon}`;
     } else {
       params += '&geo_filter=world';
     }
