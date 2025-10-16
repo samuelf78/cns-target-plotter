@@ -731,6 +731,95 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                 'data': vessel_doc
             })
         
+        elif msg_type == 21:  # Aid to Navigation (AtoN) Report
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            
+            # Validate position
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            # Determine display coordinates
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                # Try to get last valid position
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    display_lat = None
+                    display_lon = None
+            
+            position_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'is_aton': True,
+                'aton_type': decoded.get('aid_type'),
+                'aton_name': decoded.get('name', '').strip() if decoded.get('name') else '',
+                'off_position': decoded.get('off_position', False),
+                'virtual_aid': decoded.get('virtual_aid', False),
+                'repeat_indicator': decoded.get('repeat', 0)
+            }
+            
+            # Always store the position
+            await db.positions.insert_one(position_doc)
+            
+            # If this is the first valid position, backfill any previous invalid positions
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
+            
+            # Get position count
+            pos_count = await db.positions.count_documents({'mmsi': mmsi})
+            
+            # Only update vessel if we have valid display coordinates
+            if display_lat is not None and display_lon is not None:
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc,
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi),
+                            'is_aton': True,
+                            'name': position_doc['aton_name']
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                
+                # Broadcast to WebSocket clients
+                await manager.broadcast({
+                    'type': 'position',
+                    'data': position_doc
+                })
+            else:
+                # No valid position yet, just update metadata
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi),
+                            'is_aton': True,
+                            'name': position_doc['aton_name']
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+        
         # Update source statistics
         if source_id:
             target_count = await db.vessels.count_documents({'source_ids': source_id})
