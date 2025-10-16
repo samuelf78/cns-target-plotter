@@ -1467,26 +1467,26 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                     
                     # Find furthest VDM within spoof limit (with repeat_indicator <= 0)
                     for vdm_pos in vdm_positions:
-                    vdm_lat = vdm_pos.get('display_lat')
-                    vdm_lon = vdm_pos.get('display_lon')
-                    repeat_ind = vdm_pos.get('repeat_indicator', 0)
-                    
-                    # Double-check: only valid VDMs (repeat_indicator <= 0)
-                    if vdm_lat and vdm_lon and repeat_ind <= 0:
-                        # Calculate distance in km
-                        lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
-                        lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                        vdm_lat = vdm_pos.get('display_lat')
+                        vdm_lon = vdm_pos.get('display_lon')
+                        repeat_ind = vdm_pos.get('repeat_indicator', 0)
                         
-                        dlat = lat2 - lat1
-                        dlon = lon2 - lon1
-                        
-                        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-                        c = 2 * math.asin(math.sqrt(a))
-                        distance_km = 6371 * c
-                        
-                        # Only consider VDMs within spoof limit AND with repeat_indicator <= 0
-                        if distance_km <= spoof_limit_km:
-                            max_distance_within_limit = max(max_distance_within_limit, distance_km)
+                        # Double-check: only valid VDMs (repeat_indicator <= 0)
+                        if vdm_lat and vdm_lon and repeat_ind <= 0:
+                            # Calculate distance in km
+                            lat1, lon1 = math.radians(vdo_lat), math.radians(vdo_lon)
+                            lat2, lon2 = math.radians(vdm_lat), math.radians(vdm_lon)
+                            
+                            dlat = lat2 - lat1
+                            dlon = lon2 - lon1
+                            
+                            a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+                            c = 2 * math.asin(math.sqrt(a))
+                            distance_km = 6371 * c
+                            
+                            # Only consider VDMs within spoof limit AND with repeat_indicator <= 0
+                            if distance_km <= spoof_limit_km:
+                                max_distance_within_limit = max(max_distance_within_limit, distance_km)
                 
                 # Add to VDO data list (includes both own and received base stations)
                 # But range (radius_km) is only calculated for own base stations
