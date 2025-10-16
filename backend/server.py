@@ -1409,8 +1409,16 @@ async def disable_all_sources():
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/vessels/active")
-async def get_active_vessels(limit: int = 5000, skip: int = 0):
-    """Get vessels from active sources with per-source VDO spoof detection"""
+async def get_active_vessels(
+    limit: int = 5000, 
+    skip: int = 0,
+    geo_filter: str = "world",  # "world", "viewport", "rectangle"
+    min_lat: float = None,
+    max_lat: float = None,
+    min_lon: float = None,
+    max_lon: float = None
+):
+    """Get vessels from active sources with per-source VDO spoof detection and geographic filtering"""
     try:
         import math
         
