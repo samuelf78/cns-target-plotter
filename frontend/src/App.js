@@ -350,7 +350,44 @@ function App() {
   const loadSources = async () => {
     try {
       const response = await axios.get(`${API}/sources`);
-      setSources(response.data.sources || []);
+      const newSources = response.data.sources || [];
+      setSources(newSources);
+      
+      // Detect new stream sources and setup auto-zoom
+      newSources.forEach(source => {
+        const isNew = !knownSourceIds.has(source.source_id);
+        const isStream = ['tcp', 'udp', 'serial'].includes(source.source_type);
+        
+        if (isNew && isStream && !streamAutoZoomTracking.has(source.source_id)) {
+          // New stream source - setup auto-zoom timer
+          console.log(`New stream source detected: ${source.name}, setting up auto-zoom`);
+          
+          const startTime = Date.now();
+          const startTargetCount = source.target_count || 0;
+          
+          // Check every second for 2 seconds OR 50 targets
+          const checkInterval = setInterval(async () => {
+            const elapsed = Date.now() - startTime;
+            const currentTargetCount = source.target_count || 0;
+            const targetsAdded = currentTargetCount - startTargetCount;
+            
+            if (elapsed >= 2000 || targetsAdded >= 50) {
+              clearInterval(checkInterval);
+              console.log(`Auto-zoom triggered for ${source.name}: ${elapsed}ms elapsed, ${targetsAdded} targets`);
+              await autoZoomToSource(source.source_id);
+              
+              // Mark as zoomed
+              setStreamAutoZoomTracking(prev => new Map(prev).set(source.source_id, true));
+            }
+          }, 1000);
+          
+          // Set initial tracking
+          setStreamAutoZoomTracking(prev => new Map(prev).set(source.source_id, 'pending'));
+        }
+        
+        // Update known sources
+        setKnownSourceIds(prev => new Set(prev).add(source.source_id));
+      });
     } catch (error) {
       console.error('Error loading sources:', error);
     }
