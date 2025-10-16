@@ -1460,62 +1460,176 @@ async def get_status():
 
 @api_router.get("/export/xlsx")
 async def export_xlsx():
-    """Export vessel data to Excel file"""
+    """Export ALL AIS data to Excel file with comprehensive details"""
     try:
+        logger.info("Starting comprehensive XLSX export...")
+        
         # Create workbook
         wb = Workbook()
         
-        # Vessels sheet
-        ws_vessels = wb.active
-        ws_vessels.title = "Vessels"
-        ws_vessels.append(['MMSI', 'Ship Name', 'Call Sign', 'Vessel Type', 'Country', 'Lat', 'Lon', 'Speed', 'Course', 'Heading', 'Position Count', 'Last Seen', 'Sources'])
+        # Sheet 1: All Positions (Historical)
+        ws_positions = wb.active
+        ws_positions.title = "All Positions"
+        ws_positions.append([
+            'MMSI', 'Timestamp', 'Message Type', 'Original Lat', 'Original Lon', 
+            'Display Lat', 'Display Lon', 'Position Valid', 'Backfilled',
+            'Speed (knots)', 'Course', 'Heading', 'Navigation Status', 
+            'Accuracy', 'ROT', 'RAIM', 'EPFD',
+            'Is VDO', 'Is Base Station', 'Repeat Indicator', 
+            'Source ID', 'Source Name'
+        ])
+        
+        # Get all positions with source info
+        positions = await db.positions.find().sort('timestamp', -1).to_list(100000)
+        logger.info(f"Exporting {len(positions)} positions...")
+        
+        # Create source lookup
+        sources = await db.sources.find().to_list(1000)
+        source_lookup = {s['source_id']: s.get('name', 'Unknown') for s in sources}
+        
+        for pos in positions:
+            ws_positions.append([
+                pos.get('mmsi'),
+                pos.get('timestamp'),
+                pos.get('message_type'),
+                pos.get('lat'),  # Original latitude
+                pos.get('lon'),  # Original longitude
+                pos.get('display_lat'),  # Display latitude
+                pos.get('display_lon'),  # Display longitude
+                pos.get('position_valid'),
+                pos.get('backfilled', False),
+                pos.get('speed'),
+                pos.get('course'),
+                pos.get('heading'),
+                pos.get('nav_status'),
+                pos.get('accuracy'),
+                pos.get('rot'),
+                pos.get('raim'),
+                pos.get('epfd'),
+                pos.get('is_vdo', False),
+                pos.get('is_base_station', False),
+                pos.get('repeat_indicator'),
+                pos.get('source_id', '')[:8] + '...' if pos.get('source_id') else '',
+                source_lookup.get(pos.get('source_id'), 'Unknown')
+            ])
+        
+        # Sheet 2: All Messages (Raw + Decoded)
+        ws_messages = wb.create_sheet("All Messages")
+        ws_messages.append([
+            'MMSI', 'Timestamp', 'Message Type', 'Raw NMEA', 
+            'Is VDO', 'Repeat Indicator', 'Source ID', 'Source Name',
+            'Decoded - Ship Name', 'Decoded - Call Sign', 'Decoded - IMO',
+            'Decoded - Ship Type', 'Decoded - Destination', 'Decoded - ETA',
+            'Decoded - Dimensions (A/B/C/D)', 'Decoded - Draught'
+        ])
+        
+        # Get all messages
+        messages = await db.messages.find().sort('timestamp', -1).to_list(100000)
+        logger.info(f"Exporting {len(messages)} messages...")
+        
+        for msg in messages:
+            decoded = msg.get('decoded', {})
+            dimensions = f"{decoded.get('to_bow', '')}/{decoded.get('to_stern', '')}/{decoded.get('to_port', '')}/{decoded.get('to_starboard', '')}"
+            
+            ws_messages.append([
+                msg.get('mmsi'),
+                msg.get('timestamp'),
+                msg.get('message_type'),
+                msg.get('raw'),  # Original NMEA sentence
+                msg.get('is_vdo', False),
+                msg.get('repeat_indicator'),
+                msg.get('source_id', '')[:8] + '...' if msg.get('source_id') else '',
+                source_lookup.get(msg.get('source_id'), 'Unknown'),
+                decoded.get('shipname', '').strip(),
+                decoded.get('callsign', '').strip(),
+                decoded.get('imo'),
+                decoded.get('shiptype'),
+                decoded.get('destination', '').strip(),
+                str(decoded.get('eta', '')),
+                dimensions,
+                decoded.get('draught')
+            ])
+        
+        # Sheet 3: Vessels Summary
+        ws_vessels = wb.create_sheet("Vessels Summary")
+        ws_vessels.append([
+            'MMSI', 'Ship Name', 'Call Sign', 'IMO', 'Ship Type', 'Ship Type Text',
+            'Country', 'Is Base Station', 'Destination', 'ETA', 
+            'Dimensions (A/B/C/D)', 'Position Count', 'Last Seen', 
+            'Current Lat', 'Current Lon', 'Current Speed', 'Current Course', 'Current Heading',
+            'Sources'
+        ])
         
         vessels = await db.vessels.find().to_list(10000)
+        logger.info(f"Exporting {len(vessels)} vessels...")
+        
         for vessel in vessels:
             last_pos = vessel.get('last_position', {})
+            dimensions = f"{vessel.get('dimension_a', '')}/{vessel.get('dimension_b', '')}/{vessel.get('dimension_c', '')}/{vessel.get('dimension_d', '')}"
+            
             ws_vessels.append([
                 vessel.get('mmsi'),
-                vessel.get('ship_name', ''),
+                vessel.get('name', ''),
                 vessel.get('callsign', ''),
-                vessel.get('ship_type', ''),
+                vessel.get('imo'),
+                vessel.get('ship_type'),
+                vessel.get('ship_type_text', ''),
                 vessel.get('country', ''),
-                last_pos.get('lat'),
-                last_pos.get('lon'),
+                vessel.get('is_base_station', False),
+                vessel.get('destination', ''),
+                vessel.get('eta', ''),
+                dimensions,
+                vessel.get('position_count', 0),
+                vessel.get('last_seen'),
+                last_pos.get('display_lat') or last_pos.get('lat'),
+                last_pos.get('display_lon') or last_pos.get('lon'),
                 last_pos.get('speed'),
                 last_pos.get('course'),
                 last_pos.get('heading'),
-                vessel.get('position_count', 0),
-                vessel.get('last_seen'),
-                ', '.join(vessel.get('source_ids', []))
+                ', '.join(vessel.get('source_ids', [])[:3])  # First 3 sources
             ])
         
-        # Sources sheet
+        # Sheet 4: Sources
         ws_sources = wb.create_sheet("Sources")
-        ws_sources.append(['Name', 'Type', 'Status', 'Messages', 'Targets', 'Fragments', 'Created', 'Last Message'])
+        ws_sources.append([
+            'Source ID', 'Name', 'Type', 'Status', 'Host', 'Port',
+            'Message Count', 'Target Count', 'Fragment Count', 
+            'Spoof Limit (km)', 'Message Limit', 'Is Paused',
+            'Created', 'Last Message'
+        ])
         
-        sources = await db.sources.find().to_list(1000)
         for source in sources:
             ws_sources.append([
+                source.get('source_id', '')[:12] + '...',
                 source.get('name'),
                 source.get('source_type'),
                 source.get('status'),
+                source.get('host', ''),
+                source.get('port', ''),
                 source.get('message_count', 0),
                 source.get('target_count', 0),
                 source.get('fragment_count', 0),
+                source.get('spoof_limit_km', 500),
+                source.get('message_limit', 500),
+                source.get('is_paused', False),
                 source.get('created_at'),
                 source.get('last_message')
             ])
+        
+        logger.info("Saving workbook...")
         
         # Save to bytes
         output = BytesIO()
         wb.save(output)
         output.seek(0)
         
+        logger.info("Export complete!")
+        
         # Return as downloadable file
         return StreamingResponse(
             output,
             media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            headers={'Content-Disposition': f'attachment; filename=ais_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'}
+            headers={'Content-Disposition': f'attachment; filename=ais_complete_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'}
         )
     except Exception as e:
         logger.error(f"Error exporting xlsx: {e}")
