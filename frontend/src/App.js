@@ -39,13 +39,27 @@ const isBaseStation = (vessel) => {
   return vessel.mmsi && vessel.mmsi.startsWith('00');
 };
 
-// Create blue square icon for base stations and VDO positions
-const createBlueSquareIcon = () => {
+// Create base station icon with color (green = own, orange = received)
+// multiSource: adds white asterisk in center if verified across multiple sources
+const createBaseStationIcon = (isOwn, multiSource = false) => {
+  const color = isOwn ? '#22c55e' : '#fb923c'; // green for own, orange for received
+  const asterisk = multiSource ? '<span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 18px; font-weight: bold;">*</span>' : '';
+  
   return L.divIcon({
-    html: `<div style="width: 24px; height: 24px; background-color: #3b82f6; border: 2px solid #ffffff; box-shadow: 0 0 6px rgba(59, 130, 246, 0.8);"></div>`,
-    className: 'custom-blue-square-icon',
+    html: `<div style="width: 24px; height: 24px; background-color: ${color}; border: 2px solid #ffffff; box-shadow: 0 0 6px rgba(0,0,0,0.4); position: relative;">${asterisk}</div>`,
+    className: 'custom-base-station-icon',
     iconSize: [24, 24],
     iconAnchor: [12, 12]
+  });
+};
+
+// Create yellow diamond icon for AtoN (Aid to Navigation)
+const createAtoNIcon = () => {
+  return L.divIcon({
+    html: `<div style="width: 20px; height: 20px; background-color: #eab308; border: 2px solid #ffffff; box-shadow: 0 0 6px rgba(234, 179, 8, 0.6); transform: rotate(45deg);"></div>`,
+    className: 'custom-aton-icon',
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
   });
 };
 
