@@ -1263,10 +1263,33 @@ function App() {
               {/* Vessel Markers with Clustering (excluding base stations which are rendered via VDO data) */}
               <MarkerClusterGroup
                 chunkedLoading
-                maxClusterRadius={50}
+                maxClusterRadius={30}
+                disableClusteringAtZoom={11}
                 spiderfyOnMaxZoom={true}
                 showCoverageOnHover={false}
                 zoomToBoundsOnClick={true}
+                iconCreateFunction={(cluster) => {
+                  const count = cluster.getChildCount();
+                  let size = 'small';
+                  let c = 'cluster-';
+                  
+                  if (count < 10) {
+                    size = 'small';
+                    c += 'small';
+                  } else if (count < 100) {
+                    size = 'medium';
+                    c += 'medium';
+                  } else {
+                    size = 'large';
+                    c += 'large';
+                  }
+                  
+                  return L.divIcon({
+                    html: `<div><span>${count}</span></div>`,
+                    className: `marker-cluster marker-cluster-${size} ${c}`,
+                    iconSize: L.point(40, 40)
+                  });
+                }}
               >
                 {vessels.map((vessel) => {
                   if (!hasValidDisplayPosition(vessel.last_position)) return null;
