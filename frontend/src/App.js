@@ -788,8 +788,12 @@ function App() {
     const vesselLat = getDisplayLat(vessel.last_position);
     const vesselLon = getDisplayLon(vessel.last_position);
     
-    // Check if vessel is beyond spoof limit from any VDO in same source
+    // Check if vessel is beyond spoof limit from any OWN base station (VDO) in same source
+    // Exclude received base stations from spoof detection
     for (const vdo of vdoData) {
+      // Only check against own base stations (VDO), not received base stations
+      if (!vdo.is_own) continue;
+      
       // Check if vessel is from same source as VDO
       if (vessel.source_ids && vessel.source_ids.includes(vdo.source_id)) {
         const distance = calculateDistance(
