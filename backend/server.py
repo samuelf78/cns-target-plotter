@@ -122,6 +122,7 @@ class DataSource(BaseModel):
     fragment_count: int = 0  # Number of omitted/incomplete messages
     message_limit: int = 500  # Max messages to keep per source
     target_limit: int = 0  # Max targets to display (0 = unlimited)
+    keep_non_vessel_targets: bool = True  # Keep base stations and AtoNs regardless of target limit
     spoof_limit_km: float = 500.0  # Default 500km spoof limit
     is_paused: bool = False  # Pause state for streaming sources
     processing_complete: bool = False  # For file sources: true when fully processed
