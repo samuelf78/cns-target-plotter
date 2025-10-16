@@ -490,7 +490,7 @@ body {
 
 .source-meta {
   display: flex;
-  gap: 0.5rem;
+  gap: 0.35rem;
   font-size: 0.7rem;
   flex-wrap: wrap;
 }
