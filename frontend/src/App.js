@@ -232,8 +232,8 @@ function App() {
       const startPolling = () => {
         realtimePollingRef.current = setInterval(() => {
           console.log('🔴 Real-time poll: Fetching vessels with geographic filter');
-          // Use the same filter params as loadVessels
-          const params = buildGeoFilterParams().replace('limit=5000', 'limit=1000');
+          // Use the same filter params as loadVessels (full 5000 limit)
+          const params = buildGeoFilterParams();
           axios.get(`${API}/vessels/active?${params}`)
             .then(response => {
               const vessels = response.data.vessels || [];
