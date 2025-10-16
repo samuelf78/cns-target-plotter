@@ -1531,6 +1531,11 @@ async def export_xlsx():
             decoded = msg.get('decoded', {})
             dimensions = f"{decoded.get('to_bow', '')}/{decoded.get('to_stern', '')}/{decoded.get('to_port', '')}/{decoded.get('to_starboard', '')}"
             
+            # Safe string handling for decoded fields
+            shipname = decoded.get('shipname')
+            callsign = decoded.get('callsign')
+            destination = decoded.get('destination')
+            
             ws_messages.append([
                 msg.get('mmsi'),
                 msg.get('timestamp'),
@@ -1540,11 +1545,11 @@ async def export_xlsx():
                 msg.get('repeat_indicator'),
                 msg.get('source_id', '')[:8] + '...' if msg.get('source_id') else '',
                 source_lookup.get(msg.get('source_id'), 'Unknown'),
-                decoded.get('shipname', '').strip(),
-                decoded.get('callsign', '').strip(),
+                shipname.strip() if shipname else '',
+                callsign.strip() if callsign else '',
                 decoded.get('imo'),
                 decoded.get('shiptype'),
-                decoded.get('destination', '').strip(),
+                destination.strip() if destination else '',
                 str(decoded.get('eta', '')),
                 dimensions,
                 decoded.get('draught')
