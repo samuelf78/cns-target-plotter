@@ -465,8 +465,9 @@ function App() {
         await loadRecentPositions();
         await loadSources();
         
-        // Auto-zoom to newly uploaded file targets
-        if (sourceId && targetCount > 0) {
+        // Auto-zoom to newly uploaded file targets (only once)
+        if (sourceId && targetCount > 0 && !autoZoomProcessedSources.current.has(sourceId)) {
+          autoZoomProcessedSources.current.add(sourceId);
           setTimeout(() => autoZoomToSource(sourceId), 500);
         }
       } else {
