@@ -550,13 +550,6 @@ function App() {
       
       toast.success(`${streamType.toUpperCase()} stream started`);
       await loadSources();
-      
-      // Setup auto-zoom for new stream
-      if (sourceId) {
-        const source = { source_id: sourceId, source_type: streamType, name: `${streamType}:${tcpHost || serialPort}` };
-        setupStreamAutoZoom(source);
-      }
-      
       setShowConnectionPanel(false);
     } catch (error) {
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
