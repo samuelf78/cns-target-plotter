@@ -185,6 +185,7 @@ function App() {
   // Display options
   const [showAllTrails, setShowAllTrails] = useState(false);
   const [vesselTrails, setVesselTrails] = useState({}); // {mmsi: [positions]}
+  const [searchResults, setSearchResults] = useState([]); // Search results only
   
   // Connection settings
   const [streamType, setStreamType] = useState('tcp');
