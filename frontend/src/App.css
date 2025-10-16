@@ -279,6 +279,17 @@ body {
   animation: slideIn 0.3s ease;
 }
 
+/* Geographic Filter Panel */
+.geo-filter-panel {
+  position: absolute;
+  top: 1rem;
+  right: 860px;
+  width: 400px;
+  max-height: 80vh;
+  z-index: 2000;
+  animation: slideIn 0.3s ease;
+}
+
 /* Source Manager Panel */
 .source-manager-panel {
   position: absolute;
