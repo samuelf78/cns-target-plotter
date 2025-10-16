@@ -772,13 +772,15 @@ function App() {
       const vesselsWithHistory = mobileVessels.filter(v => v.position_count >= 2).slice(0, 50); // Max 50 vessels
       
       console.log(`Loading trails for ${vesselsWithHistory.length} vessels...`);
+      toast.info(`Loading trails for ${vesselsWithHistory.length} vessels...`);
       
       // Load trails in parallel (faster than sequential)
       const promises = vesselsWithHistory.map(vessel => 
-        axios.get(`${API}/vessel/${vessel.mmsi}/track?limit=10`)
+        axios.get(`${API}/track/${vessel.mmsi}`)
           .then(response => {
             if (response.data.track && response.data.track.length > 1) {
               trails[vessel.mmsi] = response.data.track;
+              console.log(`Loaded trail for ${vessel.mmsi}: ${response.data.track.length} points`);
             }
           })
           .catch(err => console.error(`Error loading trail for ${vessel.mmsi}:`, err))
