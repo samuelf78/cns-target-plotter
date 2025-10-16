@@ -589,6 +589,22 @@ function App() {
     }
   };
 
+  const updateTargetLimit = async (sourceId, limit) => {
+    try {
+      if (limit < 0) {
+        toast.error('Target limit must be 0 (unlimited) or positive');
+        return;
+      }
+      await axios.patch(`${API}/sources/${sourceId}/target-limit?target_limit=${limit}`);
+      toast.success(`Target limit updated to ${limit === 0 ? 'unlimited' : limit + ' targets'}`);
+      await loadSources();
+      await loadVessels(); // Reload vessels to reflect new limit
+      setEditingTargetLimit(null);
+    } catch (error) {
+      toast.error('Failed to update target limit');
+    }
+  };
+
   const pauseSource = async (sourceId) => {
     try {
       await axios.post(`${API}/sources/${sourceId}/pause`);
