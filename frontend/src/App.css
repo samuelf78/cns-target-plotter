@@ -451,10 +451,11 @@ body {
 .source-main {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.75rem;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
   gap: 0.5rem;
   width: 100%;
+  flex-wrap: wrap;
 }
 
 .source-item {
