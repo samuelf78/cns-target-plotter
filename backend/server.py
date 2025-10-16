@@ -1493,31 +1493,39 @@ async def export_xlsx():
         positions = await db.positions.find().sort('timestamp', -1).limit(max_positions).to_list(max_positions)
         logger.info(f"Exporting {len(positions)} positions...")
         
-        for pos in positions:
-            ws_positions.append([
-                pos.get('mmsi'),
-                pos.get('timestamp'),
-                pos.get('message_type'),
-                pos.get('lat'),  # Original latitude
-                pos.get('lon'),  # Original longitude
-                pos.get('display_lat'),  # Display latitude
-                pos.get('display_lon'),  # Display longitude
-                pos.get('position_valid'),
-                pos.get('backfilled', False),
-                pos.get('speed'),
-                pos.get('course'),
-                pos.get('heading'),
-                pos.get('nav_status'),
-                pos.get('accuracy'),
-                pos.get('rot'),
-                pos.get('raim'),
-                pos.get('epfd'),
-                pos.get('is_vdo', False),
-                pos.get('is_base_station', False),
-                pos.get('repeat_indicator'),
-                pos.get('source_id', '')[:8] + '...' if pos.get('source_id') else '',
-                source_lookup.get(pos.get('source_id'), 'Unknown')
-            ])
+        for idx, pos in enumerate(positions):
+            try:
+                ws_positions.append([
+                    pos.get('mmsi'),
+                    pos.get('timestamp'),
+                    pos.get('message_type'),
+                    pos.get('lat'),  # Original latitude
+                    pos.get('lon'),  # Original longitude
+                    pos.get('display_lat'),  # Display latitude
+                    pos.get('display_lon'),  # Display longitude
+                    pos.get('position_valid'),
+                    pos.get('backfilled', False),
+                    pos.get('speed'),
+                    pos.get('course'),
+                    pos.get('heading'),
+                    pos.get('nav_status'),
+                    pos.get('accuracy'),
+                    pos.get('rot'),
+                    pos.get('raim'),
+                    pos.get('epfd'),
+                    pos.get('is_vdo', False),
+                    pos.get('is_base_station', False),
+                    pos.get('repeat_indicator'),
+                    pos.get('source_id', '')[:8] + '...' if pos.get('source_id') else '',
+                    source_lookup.get(pos.get('source_id'), 'Unknown')
+                ])
+                
+                # Log progress every 10000 rows
+                if (idx + 1) % 10000 == 0:
+                    logger.info(f"Exported {idx + 1}/{len(positions)} positions...")
+            except Exception as e:
+                logger.error(f"Error exporting position {idx}: {e}")
+                continue
         
         # Sheet 2: All Messages (Raw + Decoded)
         ws_messages = wb.create_sheet("All Messages")
