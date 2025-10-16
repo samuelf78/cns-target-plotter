@@ -1488,9 +1488,8 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                         if distance_km <= spoof_limit_km:
                             max_distance_within_limit = max(max_distance_within_limit, distance_km)
                 
-                # Determine if this is own base station (VDO) or received (VDM Type 4)
-                is_own_base_station = vdo_pos.get('is_vdo', False)
-                
+                # Add to VDO data list (includes both own and received base stations)
+                # But range (radius_km) is only calculated for own base stations
                 vdo_data_list.append({
                     'mmsi': vdo_mmsi,
                     'lat': vdo_lat,
