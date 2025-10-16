@@ -1440,6 +1440,31 @@ async def get_active_vessels(limit: int = 5000, skip: int = 0):
                 'display_lon': {'$exists': True, '$ne': None}
             }).to_list(100)
             
+            # Detect if this source has multiple VDO base stations at different locations
+            # If so, we can't determine which VDM came from which base station - don't calculate ranges
+            own_vdo_locations = {}
+            for pos in vdo_positions:
+                if pos.get('is_vdo', False):  # Only count own base stations
+                    mmsi = pos.get('mmsi')
+                    lat = pos.get('display_lat')
+                    lon = pos.get('display_lon')
+                    if mmsi and lat and lon:
+                        # Round to 2 decimal places (~1km precision) to group nearby positions
+                        location_key = (round(lat, 2), round(lon, 2))
+                        if mmsi not in own_vdo_locations:
+                            own_vdo_locations[mmsi] = set()
+                        own_vdo_locations[mmsi].add(location_key)
+            
+            # Check if we have multiple distinct locations across all VDO base stations
+            all_vdo_locations = set()
+            for locations in own_vdo_locations.values():
+                all_vdo_locations.update(locations)
+            
+            has_multiple_base_stations = len(all_vdo_locations) > 1
+            
+            if has_multiple_base_stations:
+                logger.info(f"Source {source_id} has multiple VDO base stations at different locations - skipping range calculations")
+            
             for vdo_pos in vdo_positions:
                 # Use display coordinates for plotting
                 vdo_lat = vdo_pos.get('display_lat')
