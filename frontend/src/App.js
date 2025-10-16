@@ -169,9 +169,6 @@ function App() {
   const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [systemStatus, setSystemStatus] = useState(null);
   
-  // Use refs for auto-zoom tracking to persist across re-renders
-  const autoZoomProcessedSources = useRef(new Set());
-  
   // Geographic filter settings
   const [geoFilter, setGeoFilter] = useState('world'); // 'world', 'viewport', 'rectangle'
   const [geoRectangle, setGeoRectangle] = useState({
