@@ -1287,8 +1287,8 @@ function App() {
       <header className="nautical-header">
         <div className="header-content">
           <div className="logo-section">
-            <Anchor className="logo-icon" size={32} />
-            <h1>CNS Systems Target Plotter</h1>
+            <Anchor className="logo-icon" size={24} />
+            <h1 className="text-lg font-semibold">CNS Systems Target Plotter</h1>
           </div>
           
           <div className="header-controls">
