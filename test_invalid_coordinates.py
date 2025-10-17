@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 
 # Backend URL
-BACKEND_URL = "https://marinevis.preview.emergentagent.com/api"
+BACKEND_URL = "https://vessel-monitor-app.preview.emergentagent.com/api"
 
 def clear_database():
     """Clear the database"""

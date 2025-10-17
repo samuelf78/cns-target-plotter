@@ -1,49 +1,61 @@
 <analysis>
-The AI engineer's work involved incrementally building and refining a nautical AIS/NMEA data application. Initially, it focused on core functionalities like React frontend, FastAPI backend, MongoDB integration, and real-time streaming via TCP/UDP/Serial with WebSocket. Key issues addressed included PyAIS usage, MongoDB serialization, and UI/UX enhancements with Shadcn UI. Recent iterations concentrated on fixing crucial bugs: incorrect AIS Type 4 message processing, broken real-time TCP stream updates due to WebSocket misconfigurations and inefficient polling, and UI/UX improvements like database clear confirmation, spoof limit calculation, and source management. The engineer also generated standalone build instructions and a GitHub repository setup. The current state is addressing filtering invalid position data from AIS messages.
+The AI engineer's work involved incrementally building and refining a nautical AIS/NMEA data application. Initially, it established core functionalities like real-time data streaming (TCP/UDP/Serial), MongoDB integration, a React frontend, and a FastAPI backend. Key initial issues included AIS message parsing, data serialization, and UI/UX enhancements using Shadcn.
+
+Subsequent iterations focused on critical bug fixes and feature additions. These included comprehensive position validation (filtering invalid lat/lon, backfilling previous valid positions), enhancing  export to include all raw and historical data, and refining target management with vessel limiting. UI issues like the responsive source manager panel were addressed, along with implementing geographic filtering (viewport, rectangle, world) and significant performance optimizations (canvas rendering, marker clustering).
+
+The most recent phase focused on advanced AIS data interpretation, distinguishing vessel markers based on valid heading/course (triangle, circle for no data), displaying N/A for invalid headings in the info panel, and introducing a specific SAR target icon. The engineer consistently iterated based on user feedback, ensuring data integrity, usability, and performance were progressively improved.
 </analysis>
 
 <product_requirements>
-The user requested a nautical AIS/NMEA data application with real-time streaming. It features storing raw/decoded data in MongoDB, plotting on a map with , decoding all AIS message types via , and supporting TCP/UDP/Serial/file inputs. Historical position trails (Green >2, Orange/Yellow =2, Red =1) with directional arrows are displayed. A floating info panel shows detailed vessel data, including ship name, call sign, MMSI country, multiple data sources, and spoof status. A data source manager allows adding/disabling/removing sources, with a Disable All Sources option. Search functionality by MMSI, ship name, or call sign is included. Base stations are marked as blue squares. VDO messages are plotted as blue squares, with pink range circles representing the base station's coverage (distance to furthest valid VDM). Spoof limits (default 500km) determine VDM validity; invalid targets are greyed out. The application also includes UI improvements such as app title change, updated text colors, progress bar for file uploads, and a Search MMSI on VesselFinder button. A status panel with database statistics and export to .xlsx, and auto-centering the map on new targets were also requested.
+The application is a nautical AIS/NMEA data system for real-time streaming, storing raw/decoded data in MongoDB, and plotting on a map using . It supports TCP/UDP/Serial/file inputs and decodes all AIS message types via . Key features include historical position trails (color-coded by age) with directional arrows, a floating info panel showing detailed vessel data (name, call sign, MMSI, country, multiple sources, spoof status), and a data source manager (add/disable/remove sources, Disable All). Search by MMSI, ship name, or call sign is implemented. Base stations are blue squares, and VDO messages show pink range circles for own base stations, representing coverage to the furthest mobile vessel (excluding other base stations). Spoof limits (default 500km) gray out invalid targets. UI improvements include app title, text colors, file upload progress, and Search MMSI on VesselFinder button. A status panel with database stats and  export is present. Auto-centering on new targets was implemented but later entirely removed. Recent features include a vessel limiter to plot only the N most recent targets, plotting all target types (vessels, base stations, AtoNs with specific icons, multi-source base stations with asterisks), and a geographic filter (viewport, rectangle, whole world) to only render targets within the selected area. An option to Keep non-vessel targets when limiting stream targets was also added. The latest requirement is to use course direction if heading is invalid, draw a circle if both are invalid, display N/A for invalid non-vessel headings, and use a primitive airplane symbol for SAR targets.
 </product_requirements>
 
 <key_technical_concepts>
-- **FastAPI**: Backend API development, data processing, and database interactions.
-- **React**: Frontend UI, state management, and map integration with .
-- **MongoDB**: NoSQL database for AIS/NMEA data storage.
-- **PyAIS**: Python library for AIS/NMEA message decoding.
-- **WebSockets**: Initially used for real-time updates, later replaced with polling due to environment issues.
-- **Shadcn UI & Tailwind CSS**: Frontend styling and component library.
-- **Asyncio/Threading**: Concurrent stream handling in backend.
+- **FastAPI**: Backend API, data processing, DB interaction.
+- **React**: Frontend UI, state, .
+- **MongoDB**: NoSQL data storage.
+- **PyAIS**: AIS/NMEA message decoding.
+- **Shadcn UI & Tailwind CSS**: Frontend styling.
+- **Asyncio/Threading**: Concurrent stream handling.
+- ****: Map marker clustering.
+- **Canvas Rendering**: For map performance ().
 </key_technical_concepts>
 
 <code_architecture>
-The application uses a MERN-like stack: FastAPI (Python), React (JavaScript), and MongoDB.
+The application uses a FastAPI (Python) backend and a React (JavaScript) frontend, with MongoDB for data storage.
 
 
 
 - ****:
-    -   **Purpose**: Main FastAPI application handling API routes, data processing, and database interactions.
-    -   **Summary of changes**: Implemented  for  decoding, initially had issues with AIS Type 4 and VDO message parsing (fixed). Integrated  for async MongoDB. Added data serialization for  and . Stream handlers (, , ) use threading; initially lacked WebSocket broadcast, fixed via  and later switched to HTTP polling. Implemented source management, historical data retrieval, vessel info enrichment, and search. Developed spoof detection logic (fixed default spoof limit to 500km, refined range calculation with furthest valid VDM and ). Added duplicate source checking, and option to delete data with source. Introduced endpoints for stream pause/resume/message limits, and a  endpoint for database stats and  export. Refactored stream handlers into reusable functions.
+    -   **Purpose**: Main FastAPI application for API routes, data processing, and database interactions.
+    -   **Summary of changes**: Numerous updates for AIS message processing (), including validation for invalid lat/lon (e.g., 181/91 degrees), backfilling positions, and specific handling for AIS types 1, 2, 3, 4 (Base Station), 18 (Class B), and 21 (AtoN). Modified data export to  to be comprehensive, including raw messages and all historical positions, with error handling for  and batching for large datasets. Implemented target limiting (most recent N vessels per source) and a keep non-vessel targets option. Enhanced VDO processing to distinguish own vs received base stations, track source counts, and conditionally calculate range based on mobile vessels from file sources, excluding streams and AtoNs. Added multi-base-station detection per source to disable range calculation. Implemented geographic filtering for active vessels and VDO data based on viewport or defined rectangle. Added , ,  fields to  model.
 -   ****:
     -   **Purpose**: Main React component managing UI, state, and client-side logic.
-    -   **Summary of changes**: Implemented a nautical-themed UI with  for map display and Shadcn UI components. Manages application state for vessels, sources, selections, and map settings. Uses  for API calls and initially native WebSocket (later polling) for real-time updates. Implemented UI for source management, historical trails, floating info panel, spoof limit configuration, and VDO visualization (blue squares, pink range circles). Implemented debouncing for search and toggle functions. Fixed issues with WebSocket connection and real-time updates through polling interval. Replaced  with Shadcn Dialog for Clear Database. Added Search MMSI on VesselFinder button. Updated UI text colors, app title to CNS Systems Target Plotter, toast position, and a file upload progress indicator. Added state and functions for pause/resume stream, message limits, and source statistics display. Implemented auto-centering map on newly loaded vessels.
+    -   **Summary of changes**: Implemented helper functions for extracting  and handling AIS / validity. Created new icon functions for AtoNs (yellow diamond), own base stations (green square), received base stations (orange square), generic circles, and SAR targets (airplane). Updated vessel and VDO marker rendering to use these new icons and logic, including asterisks for multi-source base stations. Implemented UI controls for target limit, keep non-vessel targets, and geographic filtering (radio buttons, coordinate inputs, viewport/rectangle/world modes). Input fields for geo-filter were made more permissive to handle decimal issues. Auto-zoom functionality for new sources was implemented (file: on complete, stream: after 2s or 50 targets) and then *completely removed* due to user feedback, ensuring map position is stable. Replaced the static vessel list with a dynamic  panel, fixing associated runtime errors. Implemented  for  and  for performance, with adjustable  and  (set to 8). Fixed  to correctly fetch and display all vessel tracks and addressed performance issues related to  dependencies.
 -   ****:
     -   **Purpose**: Global and component-specific styles using Tailwind CSS.
-    -   **Summary of changes**: Defined nautical theme colors, layout styles. Addressed z-index issues. Added custom styles for vessel markers, VDO circles, info panels. Fixed text contrast issues in the sidebar and MMSI info panel. Added styles for source statistics display and file upload progress.
+    -   **Summary of changes**: Adjustments to  and  to resolve overflowing content and ensure delete buttons are visible across different screen sizes and zoom levels, including  layout. Added styles for new marker cluster groups and geo-filter panel.
 -   ** & **:
-    -   **Purpose**: List Python and Node.js dependencies.
-    -   **Summary of changes**: Updated to include , usage: websockets [--version | <uri>], ,  (backend), various Radix UI, , , ,  (frontend), and  (backend for  export).
+    -   **Purpose**: Dependency management.
+    -   **Summary of changes**:  was added to .
 </code_architecture>
 
 <pending_tasks>
-- Filter out and omit plotting positions that are outside of the valid longitude and latitude range (e.g., lon=181, lat=91).
-- If a previous valid position exists, use this position until the next valid position for plotting.
+- Complete the implementation of AIS specification improvements regarding heading/course validation and SAR target icons.
+- Finalize the display logic for invalid heading/course data (circle icon) and N/A for non-vessel targets' headings in the UI.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was tasked with handling special AIS cases where vessels report out-of-range positions (e.g., 181° East, 91° North) to indicate a lack of valid position data. The user explicitly requested that these invalid positions should *never be plotted* on the map, although all other data should still be saved. Furthermore, if a previously valid position exists for a vessel, it should be used for plotting until a new valid position is received. The AI engineer acknowledged this request and stated, Excellent catch! Let me add position validation to filter out these invalid no position indicators. This indicates the current work is to modify the backend's position processing logic to validate  and  values and prevent invalid ones from being used for map plotting, potentially storing a last known good position.
+Immediately before this summary request, the AI engineer was working on implementing AIS specification improvements related to vessel heading and course data interpretation. This involves:
+
+1.  **Creating helper functions:**  and  to check for valid heading (not 511) and course data.
+2.  **Creating new icons:** A simple circle icon for vessels without valid heading/course, and a primitive airplane icon for SAR targets.
+3.  **Updating vessel marker rendering:** Modifying the map rendering logic in  to dynamically choose icons (triangle, circle, SAR airplane) based on the vessel's AIS data. This includes using course direction if heading is invalid, and a circle if both are invalid.
+4.  **Updating the info panel:** Ensuring that if a non-vessel target reports a heading of 511 (N/A), the info panel displays N/A instead of the raw number.
+
+The latest action was attempting to update the info panel to display N/A for invalid heading, after previously having created the helper functions and new icons, and updated the main vessel marker rendering. The change was targeted at  around where  is displayed.
 </current_work>
 
 <optional_next_step>
-Implement position validation in the backend to filter out invalid longitude (e.g., >180 or <-180) and latitude (e.g., >90 or <-90) values.
+Complete the update to the info panel in  to correctly display N/A for invalid headings.
 </optional_next_step>
