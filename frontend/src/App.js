@@ -49,6 +49,44 @@ const isAtoN = (vessel) => {
   return vessel.mmsi && vessel.mmsi.startsWith('99');
 };
 
+// Check if vessel is SAR (Search and Rescue) aircraft
+const isSARTarget = (vessel) => {
+  if (!vessel) return false;
+  // SAR aircraft MMSIs start with 111
+  return vessel.mmsi && vessel.mmsi.startsWith('111');
+};
+
+// Validate heading per AIS specification
+const isValidHeading = (heading) => {
+  if (heading === null || heading === undefined) return false;
+  // 511 = not available, 0-359 = valid
+  return heading >= 0 && heading <= 359;
+};
+
+// Validate course per AIS specification
+const isValidCourse = (course) => {
+  if (course === null || course === undefined) return false;
+  // 360 = not available, 0-359.9 = valid
+  return course >= 0 && course < 360;
+};
+
+// Get best available direction for marker rotation
+const getBestDirection = (position) => {
+  if (!position) return null;
+  
+  const heading = position.heading;
+  const course = position.course;
+  
+  // Prefer heading if valid
+  if (isValidHeading(heading)) return heading;
+  
+  // Fall back to course if valid
+  if (isValidCourse(course)) return course;
+  
+  // No valid direction available
+  return null;
+};
+
 // Create base station icon with color (green = own, orange = received)
 // multiSource: adds white asterisk in center if verified across multiple sources
 const createBaseStationIcon = (isOwn, multiSource = false) => {
