@@ -1384,7 +1384,7 @@ function App() {
             className="sidebar-toggle-btn"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} className="rotate-[-90deg]" />}
+            {sidebarCollapsed ? <ChevronsRight size={20} /> : <ChevronsLeft size={20} />}
           </Button>
           
           {!sidebarCollapsed && (
