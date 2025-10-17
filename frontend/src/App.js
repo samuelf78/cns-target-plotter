@@ -2470,6 +2470,148 @@ function App() {
             </Card>
           </div>
         )}
+        
+        {/* Message Log Panel */}
+        {showMessageLog && (
+          <div className="source-manager-panel">
+            <Card>
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                  <CardTitle>Message Log</CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMessageLog(false)}
+                  >
+                    <X size={16} />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Filters */}
+                <div className="space-y-3 mb-4 pb-4 border-b">
+                  <div className="grid grid-cols-3 gap-2">
+                    <Input
+                      placeholder="Message Type (12, 14, etc.)"
+                      value={messageFilter.type}
+                      onChange={(e) => setMessageFilter({...messageFilter, type: e.target.value})}
+                    />
+                    <Input
+                      placeholder="MMSI"
+                      value={messageFilter.mmsi}
+                      onChange={(e) => setMessageFilter({...messageFilter, mmsi: e.target.value})}
+                    />
+                    <Input
+                      placeholder="Search text..."
+                      value={messageFilter.search}
+                      onChange={(e) => setMessageFilter({...messageFilter, search: e.target.value})}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={loadTextMessages} disabled={loadingMessages}>
+                      <Search size={16} className="mr-2" />
+                      {loadingMessages ? 'Loading...' : 'Apply Filters'}
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => {
+                        setMessageFilter({type: '', mmsi: '', search: ''});
+                        loadTextMessages();
+                      }}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        try {
+                          const response = await axios.get(`${API}/messages/text/export`, {
+                            responseType: 'blob'
+                          });
+                          const url = window.URL.createObjectURL(new Blob([response.data]));
+                          const link = document.createElement('a');
+                          link.href = url;
+                          link.setAttribute('download', `messages_${Date.now()}.json`);
+                          document.body.appendChild(link);
+                          link.click();
+                          link.remove();
+                          toast.success('Messages exported successfully');
+                        } catch (error) {
+                          console.error('Error exporting messages:', error);
+                          toast.error('Failed to export messages');
+                        }
+                      }}
+                    >
+                      <Download size={16} className="mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Messages List */}
+                <ScrollArea className="h-[500px]">
+                  {loadingMessages ? (
+                    <div className="text-center py-8 text-slate-400">Loading messages...</div>
+                  ) : textMessages.length === 0 ? (
+                    <div className="text-center py-8 text-slate-400">No messages found</div>
+                  ) : (
+                    <div className="space-y-3">
+                      {textMessages.map((msg, idx) => (
+                        <Card key={idx} className="bg-slate-800">
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex gap-2 items-center">
+                                <span className="px-2 py-1 bg-blue-600 rounded text-xs font-mono">
+                                  Type {msg.message_type}
+                                </span>
+                                <span className="px-2 py-1 bg-slate-700 rounded text-xs font-mono">
+                                  {msg.mmsi}
+                                </span>
+                                {msg.dest_mmsi && (
+                                  <span className="px-2 py-1 bg-green-700 rounded text-xs font-mono">
+                                    → {msg.dest_mmsi}
+                                  </span>
+                                )}
+                                <span className="px-2 py-1 bg-purple-700 rounded text-xs">
+                                  {msg.message_category}
+                                </span>
+                              </div>
+                              <span className="text-xs text-slate-400">
+                                {new Date(msg.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                            
+                            {msg.text && (
+                              <div className="mt-2 p-3 bg-slate-900 rounded">
+                                <p className="text-sm text-white font-mono">{msg.text}</p>
+                              </div>
+                            )}
+                            
+                            {msg.data && (
+                              <div className="mt-2 p-3 bg-slate-900 rounded">
+                                <p className="text-xs text-slate-400 font-mono">
+                                  Binary Data: {msg.data.substring(0, 100)}
+                                  {msg.data.length > 100 && '...'}
+                                </p>
+                              </div>
+                            )}
+                            
+                            <div className="mt-2 flex gap-2 text-xs text-slate-400">
+                              <span>Source: {msg.source}</span>
+                              {msg.is_vdo && <span className="text-orange-400">VDO</span>}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       {/* History Dialog */}
