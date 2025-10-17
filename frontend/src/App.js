@@ -1484,6 +1484,7 @@ function App() {
 
               {/* Vessel Markers with Clustering (excluding base stations which are rendered via VDO data) */}
               <MarkerClusterGroup
+                key={`markers-${temporalMode ? temporalTimestamp : 'current'}`}
                 chunkedLoading
                 maxClusterRadius={30}
                 disableClusteringAtZoom={8}
