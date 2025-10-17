@@ -1110,10 +1110,8 @@ function App() {
       } else {
         toast.success(`Found ${response.data.vessels.length} vessel(s)`);
         
-        // If one result, auto-select it
-        if (response.data.vessels.length === 1) {
-          selectVessel(response.data.vessels[0]);
-        }
+        // Don't auto-select - let user click to select
+        // User will click search result to center and select
       }
     } catch (error) {
       console.error('Search error:', error);
