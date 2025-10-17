@@ -1585,78 +1585,108 @@ function App() {
                 showCoverageOnHover={false}
                 zoomToBoundsOnClick={true}
               >
-                {vessels.map((vessel) => {
-                  // In temporal mode, use interpolated positions
-                  let position, shouldGrey = false;
-                  
-                  if (temporalMode && temporalTimestamp && temporalTracks[vessel.mmsi]) {
+                {/* In temporal mode, render ALL vessels with temporal tracks (even if outside viewport) */}
+                {temporalMode ? (
+                  // Temporal mode: Show all vessels that were loaded when slider was activated
+                  Object.keys(temporalTracks).map((mmsi) => {
                     // Get position at temporal timestamp
-                    const temporalPos = getPositionAtTime(temporalTracks[vessel.mmsi], temporalTimestamp);
+                    const temporalPos = getPositionAtTime(temporalTracks[mmsi], temporalTimestamp);
                     if (!temporalPos) return null; // Vessel doesn't exist yet at this time
                     
-                    position = temporalPos;
-                    shouldGrey = temporalPos.atEnd; // Grey out if at last known position
+                    // Find vessel data (might not be in current vessels array if outside viewport)
+                    const vesselData = vessels.find(v => v.mmsi === mmsi) || { mmsi: mmsi };
                     
-                    // Debug: Log temporal position usage
-                    if (vessel.mmsi === selectedVessel?.mmsi) {
-                      console.log(`[Temporal] Selected vessel ${vessel.mmsi} at`, temporalPos);
-                    }
-                  } else if (temporalMode && temporalTimestamp) {
-                    // Vessel has no temporal track data - grey it out if it's in view
-                    if (!hasValidDisplayPosition(vessel.last_position)) return null;
-                    position = vessel.last_position;
-                    shouldGrey = true; // No temporal data available
+                    const position = temporalPos;
+                    const shouldGrey = temporalPos.atEnd; // Grey out if at last known position
+                    const isBase = isBaseStation(vesselData);
+                    const isAton = isAtoN(vesselData);
+                    const isSAR = isSARTarget(vesselData);
+                    const posCount = getPositionCount(vesselData);
+                    const spoofed = shouldGrey || isSpoofed(vesselData);
+                    const vesselLat = position.display_lat || position.lat;
+                    const vesselLon = position.display_lon || position.lon;
                     
-                    // Debug: Log missing temporal data
-                    console.log(`[Temporal] Vessel ${vessel.mmsi} has no temporal data - using current position`);
-                  } else {
-                    // Normal mode - use current position
-                    if (!hasValidDisplayPosition(vessel.last_position)) return null;
-                    position = vessel.last_position;
-                  }
-                  
-                  const isBase = isBaseStation(vessel);
-                  const isAton = isAtoN(vessel);
-                  const isSAR = isSARTarget(vessel);
-                  const posCount = getPositionCount(vessel);
-                  const spoofed = shouldGrey || isSpoofed(vessel); // Force greyed if no temporal data
-                  const vesselLat = position.display_lat || position.lat;
-                  const vesselLon = position.display_lon || position.lon;
-                  
-                  // Skip base stations as they're rendered separately via VDO data
-                  if (isBase) return null;
-                  
-                  // Determine icon based on target type and available data
-                  let icon;
-                  if (isAton) {
-                    icon = createAtoNIcon();
-                  } else if (isSAR) {
-                    // SAR aircraft - use airplane icon with best direction
-                    const direction = getBestDirection(position);
-                    icon = createSARIcon(direction, posCount, spoofed);
-                  } else {
-                    // Regular vessel - check if we have direction data
-                    const direction = getBestDirection(position);
-                    if (direction !== null) {
-                      // Has valid heading or course - use triangle
-                      icon = createTriangleIcon(direction, posCount, spoofed);
+                    // Skip base stations
+                    if (isBase) return null;
+                    
+                    // Determine icon
+                    let icon;
+                    if (isAton) {
+                      icon = createAtoNIcon();
+                    } else if (isSAR) {
+                      const direction = getBestDirection(position);
+                      icon = createSARIcon(direction, posCount, spoofed);
                     } else {
-                      // No direction data - use simple circle
-                      icon = createCircleIcon(posCount, spoofed);
+                      const direction = getBestDirection(position);
+                      if (direction !== null) {
+                        icon = createTriangleIcon(direction, posCount, spoofed);
+                      } else {
+                        icon = createCircleIcon(posCount, spoofed);
+                      }
                     }
-                  }
-                  
-                  return (
-                    <Marker
-                      key={vessel.mmsi}
-                      position={[vesselLat, vesselLon]}
-                      icon={icon}
-                      eventHandlers={{
-                        click: () => selectVessel(vessel)
-                      }}
-                    />
-                  );
-                })}
+                    
+                    return (
+                      <Marker
+                        key={mmsi}
+                        position={[vesselLat, vesselLon]}
+                        icon={icon}
+                        eventHandlers={{
+                          click: () => {
+                            // Try to select from current vessels, or create minimal vessel object
+                            const vessel = vessels.find(v => v.mmsi === mmsi);
+                            if (vessel) {
+                              selectVessel(vessel);
+                            }
+                          }
+                        }}
+                      />
+                    );
+                  })
+                ) : (
+                  // Normal mode: Show only vessels in current viewport
+                  vessels.map((vessel) => {
+                    if (!hasValidDisplayPosition(vessel.last_position)) return null;
+                    
+                    const position = vessel.last_position;
+                    const isBase = isBaseStation(vessel);
+                    const isAton = isAtoN(vessel);
+                    const isSAR = isSARTarget(vessel);
+                    const posCount = getPositionCount(vessel);
+                    const spoofed = isSpoofed(vessel);
+                    const vesselLat = position.display_lat || position.lat;
+                    const vesselLon = position.display_lon || position.lon;
+                    
+                    // Skip base stations
+                    if (isBase) return null;
+                    
+                    // Determine icon
+                    let icon;
+                    if (isAton) {
+                      icon = createAtoNIcon();
+                    } else if (isSAR) {
+                      const direction = getBestDirection(position);
+                      icon = createSARIcon(direction, posCount, spoofed);
+                    } else {
+                      const direction = getBestDirection(position);
+                      if (direction !== null) {
+                        icon = createTriangleIcon(direction, posCount, spoofed);
+                      } else {
+                        icon = createCircleIcon(posCount, spoofed);
+                      }
+                    }
+                    
+                    return (
+                      <Marker
+                        key={vessel.mmsi}
+                        position={[vesselLat, vesselLon]}
+                        icon={icon}
+                        eventHandlers={{
+                          click: () => selectVessel(vessel)
+                        }}
+                      />
+                    );
+                  })
+                )}
               </MarkerClusterGroup>
               
               {/* All Vessel Trails (when enabled and NOT in temporal mode) - Light Blue Trails */}
