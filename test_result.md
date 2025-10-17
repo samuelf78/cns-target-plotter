@@ -115,6 +115,26 @@ user_problem_statement: |
   valid position exists for the vessel, use that position until a new valid position is received. 
   If no previous valid position exists, wait for the first valid position and backfill all 
   previous invalid positions with those coordinates to create smooth trails without jumps.
+  
+  NEW REQUIREMENT: AIS specification improvements for heading/course and SAR targets.
+  1. Show "N/A" for heading 511 (invalid) for ALL target types in the info panel
+  2. When clicking search results, center the map on the selected target while maintaining zoom
+  3. Use course direction if heading is invalid (511), draw circle if both are invalid
+  4. Display SAR aircraft (MMSI starting with 111) with a primitive airplane icon
+  
+  NEW REQUIREMENT: Temporal playback feature (time slider).
+  Add a time slider in the vessel info panel to enable temporal playback:
+  1. Slider starts at rightmost position (current time)
+  2. Sliding left moves back in time through vessel's historical positions
+  3. Time range: from first available position to last available position of selected vessel
+  4. Show small dots/ticks on slider track for actual recorded positions
+  5. Display timestamp label as slider moves
+  6. All visible vessels in viewport move back in time together
+  7. Interpolate positions between real data points for smooth movement
+  8. Grey out vessels without data at selected timestamp (or at their last known position)
+  9. Update info panel with historical data (speed, course, heading) at selected time
+  10. Trails only show on selected vessel (respect "show all trails" option)
+  11. Reset slider to current time when closing/reopening panel
 
 backend:
   - task: "Fix Type 4 (Base Station Report) message processing"
