@@ -375,7 +375,7 @@ function App() {
   const [systemStatus, setSystemStatus] = useState(null);
   
   // Geographic filter settings
-  const [geoFilter, setGeoFilter] = useState('world'); // 'world', 'viewport', 'rectangle'
+  const [geoFilter, setGeoFilter] = useState('viewport'); // 'viewport' or 'rectangle' (removed 'world')
   const [geoRectangle, setGeoRectangle] = useState({
     minLat: '',
     maxLat: '',
