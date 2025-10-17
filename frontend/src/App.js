@@ -1492,15 +1492,34 @@ function App() {
                 zoomToBoundsOnClick={true}
               >
                 {vessels.map((vessel) => {
-                  if (!hasValidDisplayPosition(vessel.last_position)) return null;
+                  // In temporal mode, use interpolated positions
+                  let position, shouldGrey = false;
+                  
+                  if (temporalMode && temporalTimestamp && temporalTracks[vessel.mmsi]) {
+                    // Get position at temporal timestamp
+                    const temporalPos = getPositionAtTime(temporalTracks[vessel.mmsi], temporalTimestamp);
+                    if (!temporalPos) return null; // Vessel doesn't exist yet at this time
+                    
+                    position = temporalPos;
+                    shouldGrey = temporalPos.atEnd; // Grey out if at last known position
+                  } else if (temporalMode && temporalTimestamp) {
+                    // Vessel has no temporal track data - grey it out if it's in view
+                    if (!hasValidDisplayPosition(vessel.last_position)) return null;
+                    position = vessel.last_position;
+                    shouldGrey = true; // No temporal data available
+                  } else {
+                    // Normal mode - use current position
+                    if (!hasValidDisplayPosition(vessel.last_position)) return null;
+                    position = vessel.last_position;
+                  }
                   
                   const isBase = isBaseStation(vessel);
                   const isAton = isAtoN(vessel);
                   const isSAR = isSARTarget(vessel);
                   const posCount = getPositionCount(vessel);
-                  const spoofed = isSpoofed(vessel);
-                  const vesselLat = getDisplayLat(vessel.last_position);
-                  const vesselLon = getDisplayLon(vessel.last_position);
+                  const spoofed = shouldGrey || isSpoofed(vessel); // Force greyed if no temporal data
+                  const vesselLat = position.display_lat || position.lat;
+                  const vesselLon = position.display_lon || position.lon;
                   
                   // Skip base stations as they're rendered separately via VDO data
                   if (isBase) return null;
@@ -1511,11 +1530,11 @@ function App() {
                     icon = createAtoNIcon();
                   } else if (isSAR) {
                     // SAR aircraft - use airplane icon with best direction
-                    const direction = getBestDirection(vessel.last_position);
+                    const direction = getBestDirection(position);
                     icon = createSARIcon(direction, posCount, spoofed);
                   } else {
                     // Regular vessel - check if we have direction data
-                    const direction = getBestDirection(vessel.last_position);
+                    const direction = getBestDirection(position);
                     if (direction !== null) {
                       // Has valid heading or course - use triangle
                       icon = createTriangleIcon(direction, posCount, spoofed);
