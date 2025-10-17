@@ -1601,6 +1601,10 @@ function App() {
                       setShowVesselPanel(false);
                       setSelectedVessel(null);
                       setVesselTrack([]);
+                      // Deactivate temporal mode when closing panel
+                      if (temporalMode) {
+                        deactivateTemporalMode();
+                      }
                     }}
                   >
                     <X size={16} />
