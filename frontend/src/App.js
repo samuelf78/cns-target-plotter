@@ -1005,7 +1005,11 @@ function App() {
       
       await Promise.all(promises);
       
-      console.log(`Loaded ${Object.keys(tracks).length} vessel tracks for temporal playback`);
+      console.log(`✅ Loaded ${Object.keys(tracks).length} vessel tracks for temporal playback`);
+      console.log(`Track MMSIs:`, Object.keys(tracks));
+      console.log(`Current vessels count:`, vessels.length);
+      console.log(`Current vessel MMSIs:`, vessels.map(v => v.mmsi).slice(0, 10));
+      
       setTemporalTracks(tracks);
       setTemporalMode(true);
       setTemporalSliderValue(100); // Start at current time (rightmost)
