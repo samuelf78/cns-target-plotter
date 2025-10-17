@@ -331,12 +331,14 @@ const getPositionAtTime = (track, targetTimestamp) => {
 function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
-    if (center) {
-      // Always use current map zoom unless explicitly provided
-      const targetZoom = zoom !== undefined ? zoom : map.getZoom();
-      map.setView(center, targetZoom);
+    if (center && zoom !== undefined) {
+      // Explicitly set both center and zoom (rare case)
+      map.setView(center, zoom);
+    } else if (center) {
+      // Only pan to new center - NEVER change zoom
+      map.panTo(center, { animate: true, duration: 0.5 });
     }
-  }, [center, map]); // Removed zoom from dependencies to prevent unwanted updates
+  }, [center, map]); // zoom removed from dependencies
   return null;
 }
 
