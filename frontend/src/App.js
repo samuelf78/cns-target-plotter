@@ -1211,9 +1211,14 @@ function App() {
   const loadTextMessages = async () => {
     try {
       setLoadingMessages(true);
-      const response = await axios.get(`${API}/messages/text`);
+      const params = new URLSearchParams();
+      if (messageFilter.type) params.append('message_type', messageFilter.type);
+      if (messageFilter.mmsi) params.append('mmsi', messageFilter.mmsi);
+      if (messageFilter.search) params.append('search', messageFilter.search);
+      
+      const response = await axios.get(`${API}/messages/text?${params.toString()}`);
       setTextMessages(response.data.messages || []);
-      toast.success(`Loaded ${response.data.messages?.length || 0} text messages`);
+      toast.success(`Loaded ${response.data.messages?.length || 0} messages`);
     } catch (error) {
       console.error('Error loading text messages:', error);
       toast.error('Failed to load text messages');
