@@ -1607,6 +1607,91 @@ function App() {
                   </Button>
                 </div>
               </CardHeader>
+              
+              {/* Temporal Playback Slider */}
+              {vesselTrack && vesselTrack.length > 1 && (
+                <div className="px-6 py-3 border-t border-b bg-slate-50">
+                  {!temporalMode ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => activateTemporalMode(selectedVessel)}
+                      disabled={loadingTemporalData}
+                      className="w-full"
+                    >
+                      <Clock size={16} className="mr-2" />
+                      {loadingTemporalData ? 'Loading Temporal Data...' : 'Enable Time Slider'}
+                    </Button>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-slate-700">Time Slider</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={deactivateTemporalMode}
+                          className="h-6 px-2 text-xs"
+                        >
+                          Reset to Current
+                        </Button>
+                      </div>
+                      
+                      {/* Timestamp Display */}
+                      <div className="text-xs text-center text-slate-600 font-mono">
+                        {temporalTimestamp ? new Date(temporalTimestamp).toISOString().replace('T', ' ').substring(0, 19) : ''}
+                      </div>
+                      
+                      {/* Slider with position markers */}
+                      <div className="relative">
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          step="0.1"
+                          value={temporalSliderValue}
+                          onChange={(e) => handleTemporalSliderChange(parseFloat(e.target.value))}
+                          className="w-full h-2 bg-slate-300 rounded-lg appearance-none cursor-pointer slider-thumb"
+                        />
+                        
+                        {/* Position markers (dots) for actual data points */}
+                        {vesselTrack && vesselTrack.length > 0 && selectedVesselTimeRange.min && selectedVesselTimeRange.max && (
+                          <div className="absolute top-0 left-0 w-full h-2 pointer-events-none">
+                            {vesselTrack.map((pos, idx) => {
+                              const posTime = new Date(pos.timestamp).getTime();
+                              const timeRange = selectedVesselTimeRange.max - selectedVesselTimeRange.min;
+                              const percent = ((posTime - selectedVesselTimeRange.min) / timeRange) * 100;
+                              
+                              return (
+                                <div
+                                  key={idx}
+                                  className="absolute w-1 h-1 bg-blue-600 rounded-full"
+                                  style={{ left: `${percent}%`, top: '2px' }}
+                                  title={new Date(pos.timestamp).toISOString()}
+                                />
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Time range labels */}
+                      <div className="flex justify-between text-xs text-slate-500">
+                        <span>
+                          {selectedVesselTimeRange.min ? new Date(selectedVesselTimeRange.min).toISOString().substring(11, 19) : ''}
+                        </span>
+                        <span>
+                          {selectedVesselTimeRange.max ? new Date(selectedVesselTimeRange.max).toISOString().substring(11, 19) : ''}
+                        </span>
+                      </div>
+                      
+                      <div className="text-xs text-center text-slate-500">
+                        Showing {Object.keys(temporalTracks).length} vessels at selected time
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <CardContent>
                 <ScrollArea className="h-96">
                   <div className="space-y-3 text-sm">
