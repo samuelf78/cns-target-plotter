@@ -1998,6 +1998,71 @@ async def get_status():
         logger.error(f"Error getting status: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@api_router.get("/messages/text")
+async def get_text_messages(
+    limit: int = 100,
+    message_type: Optional[int] = None,
+    mmsi: Optional[str] = None,
+    search: Optional[str] = None
+):
+    """Get text and safety related messages with filtering"""
+    try:
+        query = {}
+        
+        # Filter by message type if specified
+        if message_type:
+            query['message_type'] = message_type
+        
+        # Filter by MMSI if specified
+        if mmsi:
+            query['mmsi'] = mmsi
+        
+        # Search in text field if specified
+        if search:
+            query['text'] = {'$regex': search, '$options': 'i'}
+        
+        # Get messages sorted by timestamp (newest first)
+        messages = await db.text_messages.find(query).sort('timestamp', -1).limit(limit).to_list(limit)
+        
+        # Convert ObjectId to string for JSON serialization
+        for msg in messages:
+            msg['_id'] = str(msg['_id'])
+        
+        return {
+            'messages': messages,
+            'count': len(messages),
+            'total': await db.text_messages.count_documents(query)
+        }
+    except Exception as e:
+        logger.error(f"Error getting text messages: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/messages/text/export")
+async def export_text_messages():
+    """Export text messages to JSON file"""
+    try:
+        # Get all text messages
+        messages = await db.text_messages.find().sort('timestamp', -1).to_list(10000)
+        
+        # Convert ObjectId to string
+        for msg in messages:
+            msg['_id'] = str(msg['_id'])
+        
+        # Create JSON response
+        import json
+        json_content = json.dumps(messages, indent=2, default=str)
+        
+        return Response(
+            content=json_content,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f"attachment; filename=ais_messages_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}.json"
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error exporting text messages: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @api_router.get("/export/xlsx")
 async def export_xlsx():
     """Export ALL AIS data to Excel file with comprehensive details"""
