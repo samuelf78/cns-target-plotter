@@ -2062,7 +2062,6 @@ function App() {
                       onChange={(e) => setGeoFilter(e.target.value)}
                       className="w-full bg-slate-700 border border-slate-600 rounded px-3 py-2 text-white"
                     >
-                      <option value="world">Whole World (No Filter)</option>
                       <option value="viewport">Current Viewport Only</option>
                       <option value="rectangle">Custom Rectangle</option>
                     </select>
