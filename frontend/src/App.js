@@ -1402,6 +1402,19 @@ function App() {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => {
+                setShowMessageLog(!showMessageLog);
+                if (!showMessageLog) loadTextMessages();
+              }}
+              data-testid="message-log-button"
+            >
+              <Database size={16} className="mr-2" />
+              Message Log
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setShowGeoFilter(!showGeoFilter)}
               className={geoFilter === 'rectangle' ? 'bg-blue-900' : ''}
             >
