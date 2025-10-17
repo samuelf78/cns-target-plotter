@@ -972,7 +972,7 @@ function App() {
     }
     
     setLoadingTemporalData(true);
-    toast.info('Loading temporal data for all visible vessels...');
+    toast.info('Loading temporal data for expanded area (50% larger)...');
     
     try {
       // Get time range from selected vessel's track
@@ -988,17 +988,57 @@ function App() {
       const tracks = {};
       tracks[vessel.mmsi] = sortedTrack;
       
-      // Load tracks for all currently visible vessels
-      const visibleVessels = vessels.filter(v => 
-        hasValidDisplayPosition(v.last_position) && 
-        v.mmsi !== vessel.mmsi &&
-        !isBaseStation(v) // Don't load tracks for base stations
-      );
+      // Get current map bounds and expand by 50%
+      let expandedBounds = null;
+      if (mapRef.current) {
+        const bounds = mapRef.current.getBounds();
+        const north = bounds.getNorth();
+        const south = bounds.getSouth();
+        const east = bounds.getEast();
+        const west = bounds.getWest();
+        
+        // Calculate 50% expansion in each direction
+        const latRange = north - south;
+        const lonRange = east - west;
+        const latExpansion = latRange * 0.5;
+        const lonExpansion = lonRange * 0.5;
+        
+        expandedBounds = {
+          north: north + latExpansion,
+          south: south - latExpansion,
+          east: east + lonExpansion,
+          west: west - lonExpansion
+        };
+        
+        console.log(`Original bounds: N=${north.toFixed(2)}, S=${south.toFixed(2)}, E=${east.toFixed(2)}, W=${west.toFixed(2)}`);
+        console.log(`Expanded bounds (50% larger): N=${expandedBounds.north.toFixed(2)}, S=${expandedBounds.south.toFixed(2)}, E=${expandedBounds.east.toFixed(2)}, W=${expandedBounds.west.toFixed(2)}`);
+      }
       
-      console.log(`Loading tracks for ${visibleVessels.length} visible vessels...`);
+      // Filter vessels within expanded bounds
+      const vesselsInExpandedArea = vessels.filter(v => {
+        if (!hasValidDisplayPosition(v.last_position)) return false;
+        if (v.mmsi === vessel.mmsi) return false; // Already have selected vessel
+        if (isBaseStation(v)) return false; // Don't load tracks for base stations
+        
+        // If we have expanded bounds, check if vessel is within them
+        if (expandedBounds) {
+          const lat = getDisplayLat(v.last_position);
+          const lon = getDisplayLon(v.last_position);
+          const inBounds = lat <= expandedBounds.north && 
+                          lat >= expandedBounds.south && 
+                          lon <= expandedBounds.east && 
+                          lon >= expandedBounds.west;
+          return inBounds;
+        }
+        
+        // Fallback: use all visible vessels if bounds not available
+        return true;
+      });
       
-      // Load tracks in parallel (limit to 100 vessels for performance)
-      const vesselsToLoad = visibleVessels.slice(0, 100);
+      console.log(`Loading tracks for ${vesselsInExpandedArea.length} vessels in expanded area...`);
+      
+      // Load tracks in parallel (limit to 200 vessels since we're covering larger area)
+      const vesselsToLoad = vesselsInExpandedArea.slice(0, 200);
       const promises = vesselsToLoad.map(v => 
         axios.get(`${API}/track/${v.mmsi}`)
           .then(response => {
@@ -1015,8 +1055,6 @@ function App() {
       
       console.log(`✅ Loaded ${Object.keys(tracks).length} vessel tracks for temporal playback`);
       console.log(`Track MMSIs:`, Object.keys(tracks));
-      console.log(`Current vessels count:`, vessels.length);
-      console.log(`Current vessel MMSIs:`, vessels.map(v => v.mmsi).slice(0, 10));
       
       setTemporalTracks(tracks);
       setTemporalMode(true);
