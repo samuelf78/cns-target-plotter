@@ -1557,8 +1557,8 @@ function App() {
                 })}
               </MarkerClusterGroup>
               
-              {/* All Vessel Trails (when enabled) - Light Blue Trails */}
-              {showAllTrails && Object.entries(vesselTrails).map(([mmsi, trail]) => (
+              {/* All Vessel Trails (when enabled and NOT in temporal mode) - Light Blue Trails */}
+              {!temporalMode && showAllTrails && Object.entries(vesselTrails).map(([mmsi, trail]) => (
                 <Polyline
                   key={`trail-${mmsi}`}
                   positions={trail
@@ -1571,7 +1571,7 @@ function App() {
               ))}
 
               {/* Selected Vessel Track - Dark Blue Trail (chronologically ordered) */}
-              {selectedVessel && vesselTrack.length >= 1 && (
+              {selectedVessel && vesselTrack.length >= 1 && (temporalMode || !showAllTrails || showAllTrails) && (
                 <Polyline
                   positions={vesselTrack
                     .filter(p => hasValidDisplayPosition(p))
