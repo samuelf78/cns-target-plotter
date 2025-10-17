@@ -824,6 +824,260 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
                     upsert=True
                 )
         
+        # Type 6: Binary Addressed Message
+        elif msg_type == 6:
+            text_msg_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'message_type': 6,
+                'message_category': 'binary_addressed',
+                'dest_mmsi': decoded.get('dest_mmsi'),
+                'dac': decoded.get('dac'),
+                'fid': decoded.get('fid'),
+                'data': decoded.get('data', ''),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo
+            }
+            await db.text_messages.insert_one(text_msg_doc)
+        
+        # Type 8: Binary Broadcast Message
+        elif msg_type == 8:
+            text_msg_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'message_type': 8,
+                'message_category': 'binary_broadcast',
+                'dac': decoded.get('dac'),
+                'fid': decoded.get('fid'),
+                'data': decoded.get('data', ''),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo
+            }
+            await db.text_messages.insert_one(text_msg_doc)
+        
+        # Type 9: SAR Aircraft Position Report
+        elif msg_type == 9:
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    display_lat = None
+                    display_lon = None
+            
+            position_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
+                'altitude': decoded.get('alt'),
+                'speed': decoded.get('speed'),
+                'course': decoded.get('course'),
+                'accuracy': decoded.get('accuracy', False),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0)
+            }
+            await db.positions.insert_one(position_doc)
+            
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
+            
+            pos_count = await db.positions.count_documents({'mmsi': mmsi})
+            
+            if display_lat is not None and display_lon is not None:
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc,
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                await manager.broadcast({'type': 'position', 'data': position_doc})
+        
+        # Type 12: Addressed Safety Related Message
+        elif msg_type == 12:
+            text_msg_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'message_type': 12,
+                'message_category': 'safety_addressed',
+                'dest_mmsi': decoded.get('dest_mmsi'),
+                'text': decoded.get('text', '').strip(),
+                'seqno': decoded.get('seqno'),
+                'retransmit': decoded.get('retransmit', False),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo
+            }
+            await db.text_messages.insert_one(text_msg_doc)
+            logger.info(f"Received safety message from {mmsi} to {text_msg_doc['dest_mmsi']}: {text_msg_doc['text']}")
+        
+        # Type 14: Safety Related Broadcast Message
+        elif msg_type == 14:
+            text_msg_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'message_type': 14,
+                'message_category': 'safety_broadcast',
+                'text': decoded.get('text', '').strip(),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo
+            }
+            await db.text_messages.insert_one(text_msg_doc)
+            logger.info(f"Received safety broadcast from {mmsi}: {text_msg_doc['text']}")
+        
+        # Type 19: Extended Class B Position Report
+        elif msg_type == 19:
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    display_lat = None
+                    display_lon = None
+            
+            position_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
+                'speed': decoded.get('speed'),
+                'course': decoded.get('course'),
+                'heading': decoded.get('heading'),
+                'accuracy': decoded.get('accuracy', False),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0)
+            }
+            await db.positions.insert_one(position_doc)
+            
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
+            
+            pos_count = await db.positions.count_documents({'mmsi': mmsi})
+            
+            # Also update vessel static data from Type 19
+            vessel_name = decoded.get('shipname', '').strip() if decoded.get('shipname') else None
+            ship_type = decoded.get('shiptype')
+            ship_type_text = decoded.get('shiptype_text', '')
+            
+            if display_lat is not None and display_lon is not None:
+                update_fields = {
+                    'last_position': position_doc,
+                    'last_seen': timestamp.isoformat(),
+                    'position_count': pos_count,
+                    'country': get_mmsi_country(mmsi)
+                }
+                if vessel_name:
+                    update_fields['name'] = vessel_name
+                if ship_type is not None:
+                    update_fields['ship_type'] = ship_type
+                    update_fields['ship_type_text'] = ship_type_text
+                
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': update_fields,
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                await manager.broadcast({'type': 'position', 'data': position_doc})
+        
+        # Type 27: Long Range AIS Broadcast
+        elif msg_type == 27:
+            original_lat = decoded.get('lat')
+            original_lon = decoded.get('lon')
+            position_is_valid = is_valid_position(original_lat, original_lon)
+            
+            if position_is_valid:
+                display_lat = original_lat
+                display_lon = original_lon
+            else:
+                last_valid = await get_last_valid_position(mmsi)
+                if last_valid:
+                    display_lat = last_valid['lat']
+                    display_lon = last_valid['lon']
+                else:
+                    display_lat = None
+                    display_lon = None
+            
+            position_doc = {
+                'mmsi': mmsi,
+                'timestamp': timestamp.isoformat(),
+                'lat': original_lat,
+                'lon': original_lon,
+                'display_lat': display_lat,
+                'display_lon': display_lon,
+                'position_valid': position_is_valid,
+                'speed': decoded.get('speed'),
+                'course': decoded.get('course'),
+                'status': decoded.get('status'),
+                'status_text': decoded.get('status_text', ''),
+                'accuracy': decoded.get('accuracy', False),
+                'gnss': decoded.get('gnss', False),
+                'source': source,
+                'source_id': source_id,
+                'is_vdo': is_vdo,
+                'repeat_indicator': decoded.get('repeat', 0)
+            }
+            await db.positions.insert_one(position_doc)
+            
+            if position_is_valid:
+                await backfill_invalid_positions(mmsi, display_lat, display_lon)
+            
+            pos_count = await db.positions.count_documents({'mmsi': mmsi})
+            
+            if display_lat is not None and display_lon is not None:
+                await db.vessels.update_one(
+                    {'mmsi': mmsi},
+                    {
+                        '$set': {
+                            'last_position': position_doc,
+                            'last_seen': timestamp.isoformat(),
+                            'position_count': pos_count,
+                            'country': get_mmsi_country(mmsi)
+                        },
+                        '$addToSet': {'source_ids': source_id}
+                    },
+                    upsert=True
+                )
+                await manager.broadcast({'type': 'position', 'data': position_doc})
+        
         # Update source statistics
         if source_id:
             target_count = await db.vessels.count_documents({'source_ids': source_id})
