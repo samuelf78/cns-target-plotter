@@ -1480,7 +1480,11 @@ function App() {
                         {selectedVessel.last_position.heading !== null && (
                           <div className="info-row">
                             <span className="info-label">Heading:</span>
-                            <span className="info-value">{selectedVessel.last_position.heading}\u00b0</span>
+                            <span className="info-value">
+                              {isValidHeading(selectedVessel.last_position.heading) 
+                                ? `${selectedVessel.last_position.heading}\u00b0` 
+                                : 'N/A'}
+                            </span>
                           </div>
                         )}
                       </>
