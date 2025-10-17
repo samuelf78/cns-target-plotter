@@ -362,6 +362,15 @@ function App() {
   const [editingMessageLimit, setEditingMessageLimit] = useState(null);
   const [editingTargetLimit, setEditingTargetLimit] = useState(null);
   const [showSourceManager, setShowSourceManager] = useState(false);
+  const [showStatusPanel, setShowStatusPanel] = useState(false);
+  const [showMessageLog, setShowMessageLog] = useState(false);
+  const [textMessages, setTextMessages] = useState([]);
+  const [messageFilter, setMessageFilter] = useState({
+    type: '',
+    mmsi: '',
+    search: ''
+  });
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
@@ -371,7 +380,6 @@ function App() {
   const [showDeleteSourceDialog, setShowDeleteSourceDialog] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState(null);
   const [deleteSourceData, setDeleteSourceData] = useState(false);
-  const [showStatusPanel, setShowStatusPanel] = useState(false);
   const [systemStatus, setSystemStatus] = useState(null);
   
   // Geographic filter settings
