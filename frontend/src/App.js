@@ -1320,6 +1320,7 @@ function App() {
                   
                   const isBase = isBaseStation(vessel);
                   const isAton = isAtoN(vessel);
+                  const isSAR = isSARTarget(vessel);
                   const posCount = getPositionCount(vessel);
                   const spoofed = isSpoofed(vessel);
                   const vesselLat = getDisplayLat(vessel.last_position);
@@ -1328,12 +1329,24 @@ function App() {
                   // Skip base stations as they're rendered separately via VDO data
                   if (isBase) return null;
                   
-                  // Determine icon: AtoN (yellow diamond) or vessel (triangle)
+                  // Determine icon based on target type and available data
                   let icon;
                   if (isAton) {
                     icon = createAtoNIcon();
+                  } else if (isSAR) {
+                    // SAR aircraft - use airplane icon with best direction
+                    const direction = getBestDirection(vessel.last_position);
+                    icon = createSARIcon(direction, posCount, spoofed);
                   } else {
-                    icon = createTriangleIcon(vessel.last_position.heading || vessel.last_position.course, posCount, spoofed);
+                    // Regular vessel - check if we have direction data
+                    const direction = getBestDirection(vessel.last_position);
+                    if (direction !== null) {
+                      // Has valid heading or course - use triangle
+                      icon = createTriangleIcon(direction, posCount, spoofed);
+                    } else {
+                      // No direction data - use simple circle
+                      icon = createCircleIcon(posCount, spoofed);
+                    }
                   }
                   
                   return (
