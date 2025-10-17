@@ -826,6 +826,14 @@ function App() {
     setShowVesselPanel(true);
     setLoadingTrack(true);
     
+    // Center map on selected vessel (maintain current zoom level)
+    if (hasValidDisplayPosition(vessel.last_position)) {
+      const vesselLat = getDisplayLat(vessel.last_position);
+      const vesselLon = getDisplayLon(vessel.last_position);
+      setMapCenter([vesselLat, vesselLon]);
+      // mapZoom stays the same - we don't change it
+    }
+    
     // Load vessel track (all historic positions)
     try {
       const response = await axios.get(`${API}/track/${vessel.mmsi}`);
