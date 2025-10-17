@@ -912,14 +912,6 @@ function App() {
     setShowVesselPanel(true);
     setLoadingTrack(true);
     
-    // Center map on selected vessel (maintain current zoom level)
-    if (hasValidDisplayPosition(vessel.last_position)) {
-      const vesselLat = getDisplayLat(vessel.last_position);
-      const vesselLon = getDisplayLon(vessel.last_position);
-      setMapCenter([vesselLat, vesselLon]);
-      // mapZoom stays the same - we don't change it
-    }
-    
     // Load vessel track (all historic positions)
     try {
       const response = await axios.get(`${API}/track/${vessel.mmsi}`);
@@ -955,6 +947,19 @@ function App() {
       }
     } else {
       setVesselSources([]);
+    }
+  };
+  
+  // Separate function for search result clicks - centers map on vessel
+  const selectVesselAndCenter = async (vessel) => {
+    // First select the vessel
+    await selectVessel(vessel);
+    
+    // Then center map on it (no zoom change)
+    if (hasValidDisplayPosition(vessel.last_position)) {
+      const vesselLat = getDisplayLat(vessel.last_position);
+      const vesselLon = getDisplayLon(vessel.last_position);
+      setMapCenter([vesselLat, vesselLon]);
     }
   };
 
