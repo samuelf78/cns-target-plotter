@@ -954,6 +954,92 @@ function App() {
     }
   };
 
+  // Activate temporal playback mode
+  const activateTemporalMode = async (vessel) => {
+    if (!vessel || !vesselTrack || vesselTrack.length === 0) {
+      toast.error('No track history available for temporal playback');
+      return;
+    }
+    
+    setLoadingTemporalData(true);
+    toast.info('Loading temporal data for all visible vessels...');
+    
+    try {
+      // Get time range from selected vessel's track
+      const sortedTrack = [...vesselTrack].sort((a, b) => 
+        new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+      );
+      const minTime = new Date(sortedTrack[0].timestamp).getTime();
+      const maxTime = new Date(sortedTrack[sortedTrack.length - 1].timestamp).getTime();
+      
+      setSelectedVesselTimeRange({ min: minTime, max: maxTime });
+      
+      // Store selected vessel's track
+      const tracks = {};
+      tracks[vessel.mmsi] = sortedTrack;
+      
+      // Load tracks for all currently visible vessels
+      const visibleVessels = vessels.filter(v => 
+        hasValidDisplayPosition(v.last_position) && 
+        v.mmsi !== vessel.mmsi &&
+        !isBaseStation(v) // Don't load tracks for base stations
+      );
+      
+      console.log(`Loading tracks for ${visibleVessels.length} visible vessels...`);
+      
+      // Load tracks in parallel (limit to 100 vessels for performance)
+      const vesselsToLoad = visibleVessels.slice(0, 100);
+      const promises = vesselsToLoad.map(v => 
+        axios.get(`${API}/track/${v.mmsi}`)
+          .then(response => {
+            if (response.data.track && response.data.track.length > 0) {
+              tracks[v.mmsi] = response.data.track.sort((a, b) => 
+                new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+              );
+            }
+          })
+          .catch(err => console.error(`Error loading track for ${v.mmsi}:`, err))
+      );
+      
+      await Promise.all(promises);
+      
+      console.log(`Loaded ${Object.keys(tracks).length} vessel tracks for temporal playback`);
+      setTemporalTracks(tracks);
+      setTemporalMode(true);
+      setTemporalSliderValue(100); // Start at current time (rightmost)
+      setTemporalTimestamp(maxTime); // Current time
+      
+      toast.success(`Temporal playback activated with ${Object.keys(tracks).length} vessels`);
+    } catch (error) {
+      console.error('Error loading temporal data:', error);
+      toast.error('Failed to load temporal data');
+    } finally {
+      setLoadingTemporalData(false);
+    }
+  };
+  
+  // Deactivate temporal playback mode
+  const deactivateTemporalMode = () => {
+    setTemporalMode(false);
+    setTemporalSliderValue(100);
+    setTemporalTimestamp(null);
+    setTemporalTracks({});
+    setSelectedVesselTimeRange({ min: null, max: null });
+    toast.info('Temporal playback deactivated');
+  };
+  
+  // Handle slider value change
+  const handleTemporalSliderChange = (value) => {
+    setTemporalSliderValue(value);
+    
+    // Map slider value (0-100) to timestamp
+    if (selectedVesselTimeRange.min && selectedVesselTimeRange.max) {
+      const timeRange = selectedVesselTimeRange.max - selectedVesselTimeRange.min;
+      const timestamp = selectedVesselTimeRange.min + (timeRange * value / 100);
+      setTemporalTimestamp(timestamp);
+    }
+  };
+
   const loadAllTrails = async () => {
     if (!showAllTrails) return;
     
