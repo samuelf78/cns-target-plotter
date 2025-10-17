@@ -1208,6 +1208,20 @@ function App() {
     }
   };
 
+  const loadTextMessages = async () => {
+    try {
+      setLoadingMessages(true);
+      const response = await axios.get(`${API}/messages/text`);
+      setTextMessages(response.data.messages || []);
+      toast.success(`Loaded ${response.data.messages?.length || 0} text messages`);
+    } catch (error) {
+      console.error('Error loading text messages:', error);
+      toast.error('Failed to load text messages');
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
+
   const exportToExcel = async () => {
     try {
       const response = await axios.get(`${API}/export/xlsx`, {
