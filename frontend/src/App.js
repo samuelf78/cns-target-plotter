@@ -1234,14 +1234,42 @@ function App() {
     }));
   };
 
-  // Load trails ONLY when showAllTrails is first enabled (not on every vessel update)
+  // Load trails when showAllTrails is enabled or when new vessels come into view
   useEffect(() => {
     if (showAllTrails) {
-      loadAllTrails();
+      // Load trails for vessels that don't have trails yet
+      const loadNewTrails = async () => {
+        const mobileVessels = vessels.filter(v => !isBaseStation(v) && !isAtoN(v));
+        const vesselsNeedingTrails = mobileVessels.filter(v => 
+          v.position_count >= 2 && 
+          !vesselTrails[v.mmsi] // Only load if we don't already have the trail
+        ).slice(0, 50); // Limit to 50 new vessels at a time
+        
+        if (vesselsNeedingTrails.length === 0) return;
+        
+        console.log(`Loading trails for ${vesselsNeedingTrails.length} new vessels...`);
+        
+        const newTrails = { ...vesselTrails };
+        const promises = vesselsNeedingTrails.map(vessel => 
+          axios.get(`${API}/track/${vessel.mmsi}`)
+            .then(response => {
+              if (response.data.track && response.data.track.length > 1) {
+                newTrails[vessel.mmsi] = response.data.track;
+              }
+            })
+            .catch(err => console.error(`Error loading trail for ${vessel.mmsi}:`, err))
+        );
+        
+        await Promise.all(promises);
+        setVesselTrails(newTrails);
+        console.log(`Loaded ${vesselsNeedingTrails.length} new trails`);
+      };
+      
+      loadNewTrails();
     } else {
       setVesselTrails({});
     }
-  }, [showAllTrails]); // Removed vessels.length dependency to prevent constant reloading
+  }, [showAllTrails, vessels]); // Re-run when showAllTrails changes OR vessels list changes
 
   // Component to capture map reference
   const MapRefCapture = () => {
