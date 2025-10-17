@@ -1343,7 +1343,7 @@ function App() {
               variant="outline"
               size="sm"
               onClick={() => setShowGeoFilter(!showGeoFilter)}
-              className={geoFilter !== 'world' ? 'bg-blue-900' : ''}
+              className={geoFilter === 'rectangle' ? 'bg-blue-900' : ''}
             >
               <MapPin size={16} className="mr-2" />
               Geo Filter
