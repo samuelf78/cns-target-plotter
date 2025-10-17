@@ -319,6 +319,14 @@ function App() {
   const [serialPorts, setSerialPorts] = useState([]);
   const [baudrate, setBaudrate] = useState('9600');
   
+  // Temporal playback (time slider)
+  const [temporalMode, setTemporalMode] = useState(false);
+  const [temporalSliderValue, setTemporalSliderValue] = useState(100); // 0-100, 100 = current time
+  const [temporalTimestamp, setTemporalTimestamp] = useState(null);
+  const [temporalTracks, setTemporalTracks] = useState({}); // {mmsi: [positions]}
+  const [loadingTemporalData, setLoadingTemporalData] = useState(false);
+  const [selectedVesselTimeRange, setSelectedVesselTimeRange] = useState({ min: null, max: null });
+  
   const fileInputRef = useRef(null);
   const wsRef = useRef(null);
   const pollIntervalRef = useRef(null);
