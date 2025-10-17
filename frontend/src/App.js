@@ -1732,47 +1732,86 @@ function App() {
                       </div>
                     )}
                     
-                    {hasValidDisplayPosition(selectedVessel.last_position) && (
-                      <>
-                        <div className="info-section-title">Current Position</div>
-                        <div className="info-row">
-                          <span className="info-label">Latitude:</span>
-                          <span className="info-value">{getDisplayLat(selectedVessel.last_position)?.toFixed(6)}</span>
-                        </div>
-                        <div className="info-row">
-                          <span className="info-label">Longitude:</span>
-                          <span className="info-value">{getDisplayLon(selectedVessel.last_position)?.toFixed(6)}</span>
-                        </div>
-                        {selectedVessel.last_position.position_valid === false && (
-                          <div className="info-row">
-                            <span className="info-label">Position Status:</span>
-                            <span className="info-value text-yellow-500">Using last known valid position</span>
+                    {(() => {
+                      // Determine which position to display (temporal or current)
+                      let displayPosition = selectedVessel.last_position;
+                      let isTemporalPosition = false;
+                      
+                      if (temporalMode && temporalTimestamp && temporalTracks[selectedVessel.mmsi]) {
+                        const temporalPos = getPositionAtTime(temporalTracks[selectedVessel.mmsi], temporalTimestamp);
+                        if (temporalPos) {
+                          displayPosition = temporalPos;
+                          isTemporalPosition = true;
+                        }
+                      }
+                      
+                      if (!hasValidDisplayPosition(displayPosition) && !(displayPosition?.lat && displayPosition?.lon)) {
+                        return null;
+                      }
+                      
+                      return (
+                        <>
+                          <div className="info-section-title">
+                            {isTemporalPosition ? 'Historical Position' : 'Current Position'}
+                            {isTemporalPosition && displayPosition.interpolated && (
+                              <span className="text-xs text-blue-500 ml-2">(Interpolated)</span>
+                            )}
                           </div>
-                        )}
-                        {selectedVessel.last_position.speed !== null && (
                           <div className="info-row">
-                            <span className="info-label">Speed:</span>
-                            <span className="info-value">{selectedVessel.last_position.speed} knots</span>
-                          </div>
-                        )}
-                        {selectedVessel.last_position.course !== null && (
-                          <div className="info-row">
-                            <span className="info-label">Course:</span>
-                            <span className="info-value">{selectedVessel.last_position.course}\u00b0</span>
-                          </div>
-                        )}
-                        {selectedVessel.last_position.heading !== null && (
-                          <div className="info-row">
-                            <span className="info-label">Heading:</span>
+                            <span className="info-label">Latitude:</span>
                             <span className="info-value">
-                              {isValidHeading(selectedVessel.last_position.heading) 
-                                ? `${selectedVessel.last_position.heading}\u00b0` 
-                                : 'N/A'}
+                              {(displayPosition.display_lat || displayPosition.lat)?.toFixed(6)}
                             </span>
                           </div>
-                        )}
-                      </>
-                    )}
+                          <div className="info-row">
+                            <span className="info-label">Longitude:</span>
+                            <span className="info-value">
+                              {(displayPosition.display_lon || displayPosition.lon)?.toFixed(6)}
+                            </span>
+                          </div>
+                          {displayPosition.position_valid === false && (
+                            <div className="info-row">
+                              <span className="info-label">Position Status:</span>
+                              <span className="info-value text-yellow-500">Using last known valid position</span>
+                            </div>
+                          )}
+                          {displayPosition.speed !== null && displayPosition.speed !== undefined && (
+                            <div className="info-row">
+                              <span className="info-label">Speed:</span>
+                              <span className="info-value">
+                                {typeof displayPosition.speed === 'number' ? displayPosition.speed.toFixed(1) : displayPosition.speed} knots
+                              </span>
+                            </div>
+                          )}
+                          {displayPosition.course !== null && displayPosition.course !== undefined && (
+                            <div className="info-row">
+                              <span className="info-label">Course:</span>
+                              <span className="info-value">
+                                {typeof displayPosition.course === 'number' ? displayPosition.course.toFixed(1) : displayPosition.course}\u00b0
+                              </span>
+                            </div>
+                          )}
+                          {displayPosition.heading !== null && displayPosition.heading !== undefined && (
+                            <div className="info-row">
+                              <span className="info-label">Heading:</span>
+                              <span className="info-value">
+                                {isValidHeading(displayPosition.heading) 
+                                  ? `${displayPosition.heading}\u00b0` 
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                          )}
+                          {isTemporalPosition && displayPosition.timestamp && (
+                            <div className="info-row">
+                              <span className="info-label">Timestamp:</span>
+                              <span className="info-value text-xs">
+                                {new Date(displayPosition.timestamp).toISOString().replace('T', ' ').substring(0, 19)}
+                              </span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                     
                     {selectedVessel.destination && (
                       <div className="info-row">
