@@ -332,9 +332,11 @@ function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
     if (center) {
-      map.setView(center, zoom || map.getZoom());
+      // Always use current map zoom unless explicitly provided
+      const targetZoom = zoom !== undefined ? zoom : map.getZoom();
+      map.setView(center, targetZoom);
     }
-  }, [center, zoom, map]);
+  }, [center, map]); // Removed zoom from dependencies to prevent unwanted updates
   return null;
 }
 
