@@ -1412,7 +1412,7 @@ function App() {
                     <div
                       key={vessel.mmsi}
                       className={`vessel-item ${selectedVessel?.mmsi === vessel.mmsi ? 'selected' : ''}`}
-                      onClick={() => selectVessel(vessel)}
+                      onClick={() => selectVesselAndCenter(vessel)}
                       data-testid={`search-result-${vessel.mmsi}`}
                     >
                       <div className="vessel-info">
