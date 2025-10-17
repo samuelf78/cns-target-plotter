@@ -1446,7 +1446,7 @@ function App() {
               preferCanvas={true}
             >
               <MapRefCapture />
-              <MapUpdater center={mapCenter} zoom={mapZoom} />
+              <MapUpdater center={mapCenter} />
               <TileLayer
                 url={getMapTileUrl()}
                 attribution='&copy; OpenStreetMap contributors'
