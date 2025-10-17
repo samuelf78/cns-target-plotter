@@ -1375,97 +1375,112 @@ function App() {
 
       <div className="main-container">
         {/* Sidebar */}
-        <aside className="sidebar">
-          {/* Search Panel */}
-          <Card className="search-card">
-            <CardHeader>
-              <CardTitle className="text-sm">Search Vessels</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Input
-                  placeholder="MMSI Number"
-                  value={searchMMSI}
-                  onChange={(e) => setSearchMMSI(e.target.value)}
-                  data-testid="search-mmsi-input"
-                />
-                <Input
-                  placeholder="Vessel Name"
-                  value={searchName}
-                  onChange={(e) => setSearchName(e.target.value)}
-                  data-testid="search-name-input"
-                />
-                <Button
-                  className="w-full"
-                  onClick={handleSearch}
-                  data-testid="search-button"
-                >
-                  <Search size={16} className="mr-2" />
-                  Search
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Map Provider Selection */}
-          <Card className="map-provider-card">
-            <CardHeader>
-              <CardTitle className="text-sm">Map Provider</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={mapProvider} onValueChange={setMapProvider}>
-                <SelectTrigger data-testid="map-provider-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="osm">OpenStreetMap</SelectItem>
-                  <SelectItem value="satellite">Satellite</SelectItem>
-                  <SelectItem value="nautical">Nautical Chart</SelectItem>
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Search Results Only */}
-          {searchResults.length > 0 && (
-            <Card className="vessel-list-card">
-              <CardHeader>
-                <CardTitle className="text-sm">
-                  <Search size={16} className="inline mr-2" />
-                  Search Results ({searchResults.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="vessel-list" data-testid="search-results-list">
-                  {searchResults.map((vessel) => (
-                    <div
-                      key={vessel.mmsi}
-                      className={`vessel-item ${selectedVessel?.mmsi === vessel.mmsi ? 'selected' : ''}`}
-                      onClick={() => selectVesselAndCenter(vessel)}
-                      data-testid={`search-result-${vessel.mmsi}`}
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+          {/* Collapse/Expand Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="sidebar-toggle-btn"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <ChevronRight size={20} /> : <ChevronDown size={20} className="rotate-[-90deg]" />}
+          </Button>
+          
+          {!sidebarCollapsed && (
+            <>
+              {/* Search Panel */}
+              <Card className="search-card">
+                <CardHeader>
+                  <CardTitle className="text-sm">Search Vessels</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <Input
+                      placeholder="MMSI Number"
+                      value={searchMMSI}
+                      onChange={(e) => setSearchMMSI(e.target.value)}
+                      data-testid="search-mmsi-input"
+                    />
+                    <Input
+                      placeholder="Vessel Name"
+                      value={searchName}
+                      onChange={(e) => setSearchName(e.target.value)}
+                      data-testid="search-name-input"
+                    />
+                    <Button
+                      className="w-full"
+                      onClick={handleSearch}
+                      data-testid="search-button"
                     >
-                      <div className="vessel-info">
-                        <div className="vessel-name">
-                          {vessel.name || `MMSI: ${vessel.mmsi}`}
-                        </div>
-                        <div className="vessel-details">
-                          <span className="mmsi-badge">{vessel.mmsi}</span>
-                          {vessel.ship_type_text && (
-                            <span className="type-badge">{vessel.ship_type_text}</span>
-                          )}
-                        </div>
-                        {hasValidDisplayPosition(vessel.last_position) && (
-                          <div className="vessel-position">
-                            <MapPin size={12} />
-                            {getDisplayLat(vessel.last_position)?.toFixed(4)}, {getDisplayLon(vessel.last_position)?.toFixed(4)}
+                      <Search size={16} className="mr-2" />
+                      Search
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Map Provider Selection */}
+              <Card className="map-provider-card">
+                <CardHeader>
+                  <CardTitle className="text-sm">Map Provider</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={mapProvider} onValueChange={setMapProvider}>
+                    <SelectTrigger data-testid="map-provider-select">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="osm">OpenStreetMap</SelectItem>
+                      <SelectItem value="satellite">Satellite</SelectItem>
+                      <SelectItem value="nautical">Nautical Chart</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              {/* Search Results Only */}
+              {searchResults.length > 0 && (
+                <Card className="vessel-list-card">
+                  <CardHeader>
+                    <CardTitle className="text-sm">
+                      <Search size={16} className="inline mr-2" />
+                      Search Results ({searchResults.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="vessel-list" data-testid="search-results-list">
+                      {searchResults.map((vessel) => (
+                        <div
+                          key={vessel.mmsi}
+                          className={`vessel-item ${selectedVessel?.mmsi === vessel.mmsi ? 'selected' : ''}`}
+                          onClick={() => selectVesselAndCenter(vessel)}
+                          data-testid={`search-result-${vessel.mmsi}`}
+                        >
+                          <div className="vessel-info">
+                            <div className="vessel-name">
+                              {vessel.name || `MMSI: ${vessel.mmsi}`}
+                            </div>
+                            <div className="vessel-details">
+                              <span className="mmsi-badge">{vessel.mmsi}</span>
+                              {vessel.ship_type_text && (
+                                <span className="type-badge">{vessel.ship_type_text}</span>
+                              )}
+                            </div>
+                            {hasValidDisplayPosition(vessel.last_position) && (
+                              <div className="vessel-position">
+                                <MapPin size={12} />
+                                {getDisplayLat(vessel.last_position)?.toFixed(4)}, {getDisplayLon(vessel.last_position)?.toFixed(4)}
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
         </aside>
 
