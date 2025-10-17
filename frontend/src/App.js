@@ -111,6 +111,95 @@ const createAtoNIcon = () => {
   });
 };
 
+// Create simple circle icon for vessels without direction data
+const createCircleIcon = (positionCount, isSpoofed) => {
+  let color = '#ef4444'; // red - 1 position
+  if (positionCount > 2) {
+    color = '#22c55e'; // green - more than 2
+  } else if (positionCount === 2) {
+    color = '#eab308'; // yellow - 2 positions
+  }
+  
+  // Grey out if spoofed
+  if (isSpoofed) {
+    color = '#6b7280'; // grey
+  }
+  
+  const opacity = isSpoofed ? 0.4 : 1.0;
+  
+  return L.divIcon({
+    html: `<div style="
+      width: 12px;
+      height: 12px;
+      background-color: ${color};
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      opacity: ${opacity};
+      filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+    "></div>`,
+    className: 'custom-circle-icon',
+    iconSize: [12, 12],
+    iconAnchor: [6, 6]
+  });
+};
+
+// Create airplane icon for SAR (Search and Rescue) aircraft
+const createSARIcon = (heading, positionCount, isSpoofed) => {
+  let color = '#ef4444'; // red - 1 position
+  if (positionCount > 2) {
+    color = '#22c55e'; // green - more than 2
+  } else if (positionCount === 2) {
+    color = '#eab308'; // yellow - 2 positions
+  }
+  
+  // Grey out if spoofed
+  if (isSpoofed) {
+    color = '#6b7280'; // grey
+  }
+  
+  const rotation = heading || 0;
+  const opacity = isSpoofed ? 0.4 : 1.0;
+  
+  // Simple airplane shape using CSS
+  return L.divIcon({
+    html: `<div style="
+      position: relative;
+      width: 24px;
+      height: 24px;
+      transform: rotate(${rotation}deg);
+      opacity: ${opacity};
+    ">
+      <div style="
+        position: absolute;
+        width: 4px;
+        height: 20px;
+        background-color: ${color};
+        left: 10px;
+        top: 2px;
+      "></div>
+      <div style="
+        position: absolute;
+        width: 20px;
+        height: 4px;
+        background-color: ${color};
+        left: 2px;
+        top: 8px;
+      "></div>
+      <div style="
+        position: absolute;
+        width: 10px;
+        height: 3px;
+        background-color: ${color};
+        left: 7px;
+        top: 16px;
+      "></div>
+    </div>`,
+    className: 'custom-sar-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12]
+  });
+};
+
 // Create simple triangle marker pointing in heading direction (much faster than SVG arrows)
 const createTriangleIcon = (heading, positionCount, isSpoofed) => {
   let color = '#ef4444'; // red - 1 position
