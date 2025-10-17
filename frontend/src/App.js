@@ -254,6 +254,80 @@ const hasValidDisplayPosition = (position) => {
   return lat !== null && lat !== undefined && lon !== null && lon !== undefined && lat !== 0 && lon !== 0;
 };
 
+// Interpolate position between two timestamps
+const interpolatePosition = (pos1, pos2, targetTimestamp) => {
+  if (!pos1 || !pos2) return null;
+  
+  const t1 = new Date(pos1.timestamp).getTime();
+  const t2 = new Date(pos2.timestamp).getTime();
+  const t = targetTimestamp;
+  
+  // If timestamps are the same, return pos1
+  if (t2 === t1) return pos1;
+  
+  // Calculate interpolation factor (0 = pos1, 1 = pos2)
+  const factor = (t - t1) / (t2 - t1);
+  
+  // Interpolate lat/lon
+  const lat = pos1.lat + (pos2.lat - pos1.lat) * factor;
+  const lon = pos1.lon + (pos2.lon - pos1.lon) * factor;
+  
+  // Interpolate other numeric fields if available
+  const speed = pos1.speed !== null && pos2.speed !== null 
+    ? pos1.speed + (pos2.speed - pos1.speed) * factor 
+    : pos1.speed || pos2.speed;
+    
+  const course = pos1.course !== null && pos2.course !== null
+    ? pos1.course + (pos2.course - pos1.course) * factor
+    : pos1.course || pos2.course;
+  
+  return {
+    ...pos1,
+    lat,
+    lon,
+    display_lat: lat,
+    display_lon: lon,
+    speed,
+    course,
+    interpolated: true,
+    timestamp: new Date(t).toISOString()
+  };
+};
+
+// Get position at specific timestamp from track
+const getPositionAtTime = (track, targetTimestamp) => {
+  if (!track || track.length === 0) return null;
+  
+  // Sort track by timestamp (oldest to newest)
+  const sortedTrack = [...track].sort((a, b) => 
+    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+  
+  // If target is before first position, return null (vessel doesn't exist yet)
+  const firstTime = new Date(sortedTrack[0].timestamp).getTime();
+  if (targetTimestamp < firstTime) return null;
+  
+  // If target is after last position, return last position (greyed out)
+  const lastTime = new Date(sortedTrack[sortedTrack.length - 1].timestamp).getTime();
+  if (targetTimestamp >= lastTime) {
+    return { ...sortedTrack[sortedTrack.length - 1], atEnd: true };
+  }
+  
+  // Find positions before and after target timestamp
+  for (let i = 0; i < sortedTrack.length - 1; i++) {
+    const t1 = new Date(sortedTrack[i].timestamp).getTime();
+    const t2 = new Date(sortedTrack[i + 1].timestamp).getTime();
+    
+    if (targetTimestamp >= t1 && targetTimestamp < t2) {
+      // Interpolate between these two positions
+      return interpolatePosition(sortedTrack[i], sortedTrack[i + 1], targetTimestamp);
+    }
+  }
+  
+  // Shouldn't reach here, but return last position as fallback
+  return sortedTrack[sortedTrack.length - 1];
+};
+
 function MapUpdater({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
