@@ -1503,11 +1503,19 @@ function App() {
                     
                     position = temporalPos;
                     shouldGrey = temporalPos.atEnd; // Grey out if at last known position
+                    
+                    // Debug: Log temporal position usage
+                    if (vessel.mmsi === selectedVessel?.mmsi) {
+                      console.log(`[Temporal] Selected vessel ${vessel.mmsi} at`, temporalPos);
+                    }
                   } else if (temporalMode && temporalTimestamp) {
                     // Vessel has no temporal track data - grey it out if it's in view
                     if (!hasValidDisplayPosition(vessel.last_position)) return null;
                     position = vessel.last_position;
                     shouldGrey = true; // No temporal data available
+                    
+                    // Debug: Log missing temporal data
+                    console.log(`[Temporal] Vessel ${vessel.mmsi} has no temporal data - using current position`);
                   } else {
                     // Normal mode - use current position
                     if (!hasValidDisplayPosition(vessel.last_position)) return null;
