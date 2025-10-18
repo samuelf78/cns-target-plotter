@@ -917,6 +917,7 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
             position_doc = {
                 'mmsi': mmsi,
                 'timestamp': timestamp.isoformat(),
+                'message_type': 9,  # SAR Aircraft Position Report
                 'lat': original_lat,
                 'lon': original_lon,
                 'display_lat': display_lat,
