@@ -454,7 +454,12 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         
         mmsi = str(decoded.get('mmsi', 'unknown'))
         msg_type = decoded.get('msg_type', 0)
-        timestamp = sync_timestamp_with_message(decoded)
+        
+        # Use timestamp priority: log_timestamp > message UTC sync > system time
+        if log_timestamp:
+            timestamp = log_timestamp
+        else:
+            timestamp = sync_timestamp_with_message(decoded)
         
         # Determine if VDO or VDM
         # VDO format: !xxVDO or $xxVDO (where xx is 2-char talker ID like AB, AI, etc.)
