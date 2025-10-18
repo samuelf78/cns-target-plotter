@@ -386,6 +386,47 @@ async def backfill_invalid_positions(mmsi: str, valid_lat: float, valid_lon: flo
             )
         logger.info(f"Backfilled {len(invalid_positions)} invalid positions for MMSI {mmsi}")
 
+def parse_log_line(raw_line: str):
+    """
+    Parse AIS log line that may contain timestamp and decoded info.
+    Formats supported:
+    1. Plain NMEA: !AIVDM,1,1,,B,13aEOK?P00PD2wVMdLDRhgvL289?,0*26
+    2. With timestamp: 2025-04-07 06:52:10 < !AIVDM,1,1,,B,13aEOK...
+    3. With timestamp and decoded: 2025-04-07 06:52:10 < !AIVDM... AIS#1 257196000...
+    
+    Returns: (nmea_sentence, log_timestamp or None)
+    """
+    import re
+    
+    # Pattern: YYYY-MM-DD HH:MM:SS < NMEA_SENTENCE [optional decoded info]
+    # Timestamp format: 2025-04-07 06:52:10
+    timestamp_pattern = r'^(\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2})\s*<?(.+)$'
+    
+    match = re.match(timestamp_pattern, raw_line.strip())
+    if match:
+        # Found timestamp prefix
+        timestamp_str = match.group(1)
+        rest = match.group(2).strip()
+        
+        try:
+            # Parse timestamp
+            log_timestamp = datetime.strptime(timestamp_str, '%Y-%m-%d %H:%M:%S')
+            log_timestamp = log_timestamp.replace(tzinfo=timezone.utc)
+        except ValueError:
+            log_timestamp = None
+        
+        # Extract NMEA sentence (before any decoded info)
+        # NMEA sentences start with ! or $
+        nmea_match = re.search(r'[!$]AIVD[MO][^!$]*', rest)
+        if nmea_match:
+            nmea_sentence = nmea_match.group(0).strip()
+            return nmea_sentence, log_timestamp
+        
+        # If no NMEA found in rest, return original
+        return raw_line.strip(), log_timestamp
+    else:
+        # No timestamp, return as-is
+        return raw_line.strip(), None
 async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None):
     """Process and store AIS message"""
     try:
