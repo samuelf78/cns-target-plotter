@@ -2247,7 +2247,7 @@ async def export_xlsx():
                 source.get('target_count', 0),
                 source.get('fragment_count', 0),
                 source.get('spoof_limit_km', 500),
-                source.get('message_limit', 500),
+                source.get('message_limit', 0),  # 0 = unlimited
                 source.get('is_paused', False),
                 source.get('created_at'),
                 source.get('last_message')
