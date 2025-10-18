@@ -1225,11 +1225,16 @@ async def upload_file(file: UploadFile = File(...), background_tasks: Background
         errors = 0
         
         for line in lines:
-            line = line.strip()
-            if line and (line.startswith('!') or line.startswith('$')):
+            line_stripped = line.strip()
+            if line_stripped:
                 try:
-                    await process_ais_message(line, source=f'file:{file.filename}', source_id=source_id)
-                    processed += 1
+                    # Parse log line to extract NMEA and timestamp
+                    nmea_sentence, log_ts = parse_log_line(line_stripped)
+                    
+                    # Only process if it's a valid NMEA sentence
+                    if nmea_sentence and (nmea_sentence.startswith('!') or nmea_sentence.startswith('$')):
+                        await process_ais_message(nmea_sentence, source=f'file:{file.filename}', source_id=source_id, log_timestamp=log_ts)
+                        processed += 1
                 except Exception as e:
                     errors += 1
                     logger.error(f"Error processing line: {e}")
