@@ -1634,14 +1634,17 @@ function App() {
                     if (!temporalPos) return null; // Vessel doesn't exist yet at this time
                     
                     // Find vessel data (might not be in current vessels array if outside viewport)
-                    const vesselData = vessels.find(v => v.mmsi === mmsi) || { mmsi: mmsi };
+                    const vesselData = vessels.find(v => v.mmsi === mmsi) || { 
+                      mmsi: mmsi,
+                      position_count: temporalTracks[mmsi]?.length || 1  // Use track length if vessel not in current array
+                    };
                     
                     const position = temporalPos;
                     const shouldGrey = temporalPos.atEnd; // Grey out if at last known position
                     const isBase = isBaseStation(vesselData);
                     const isAton = isAtoN(vesselData);
                     const isSAR = isSARTarget(vesselData);
-                    const posCount = getPositionCount(vesselData);
+                    const posCount = vesselData.position_count || temporalTracks[mmsi]?.length || 1;
                     const spoofed = shouldGrey || isSpoofed(vesselData);
                     const vesselLat = position.display_lat || position.lat;
                     const vesselLon = position.display_lon || position.lon;
