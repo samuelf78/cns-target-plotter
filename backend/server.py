@@ -399,10 +399,10 @@ async def process_ais_message(raw_message: str, source: str = "unknown", source_
         if source_id:
             source_doc = await db.sources.find_one({'source_id': source_id})
             if source_doc:
-                message_limit = source_doc.get('message_limit', 500)
+                message_limit = source_doc.get('message_limit', 0)  # 0 = unlimited
                 message_count = await db.messages.count_documents({'source_id': source_id})
                 
-                if message_count > message_limit:
+                if message_limit > 0 and message_count > message_limit:
                     # Delete oldest messages beyond limit
                     messages_to_delete = message_count - message_limit
                     old_messages = await db.messages.find(
