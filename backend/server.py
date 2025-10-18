@@ -151,6 +151,45 @@ def serialize_doc(doc):
     
     return doc
 
+def sync_timestamp_with_message(decoded_msg):
+    """
+    Synchronize system timestamp with UTC second from AIS message.
+    Uses the 'second' field from position reports or full timestamp from base station reports.
+    """
+    now = datetime.now(timezone.utc)
+    msg_type = decoded_msg.get('msg_type', 0)
+    
+    # Type 4, 11: Base Station Reports with full UTC timestamp
+    if msg_type in [4, 11]:
+        year = decoded_msg.get('year')
+        month = decoded_msg.get('month')
+        day = decoded_msg.get('day')
+        hour = decoded_msg.get('hour')
+        minute = decoded_msg.get('minute')
+        second = decoded_msg.get('second')
+        
+        # Only use if all fields are valid
+        if all(x is not None for x in [year, month, day, hour, minute, second]):
+            try:
+                # Validate ranges
+                if (1970 <= year <= 2100 and 1 <= month <= 12 and 1 <= day <= 31 and
+                    0 <= hour <= 23 and 0 <= minute <= 59 and 0 <= second <= 59):
+                    return datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc)
+            except ValueError:
+                # Invalid date/time values, fall through to use system time
+                pass
+    
+    # Types 1, 2, 3, 9, 18, 19, 21, 27: Have 'second' field only
+    elif msg_type in [1, 2, 3, 9, 18, 19, 21, 27]:
+        second = decoded_msg.get('second')
+        if second is not None and 0 <= second <= 59:
+            # Replace the second in our timestamp with the message's second
+            # Keep current hour/minute, just sync the second
+            return now.replace(second=second, microsecond=0)
+    
+    # For other message types or invalid data, use system time
+    return now
+
 def get_mmsi_country(mmsi: str) -> str:
     """Get country from MMSI based on MID (Maritime Identification Digits)"""
     if not mmsi or len(mmsi) < 3:
