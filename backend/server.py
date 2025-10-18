@@ -427,7 +427,7 @@ def parse_log_line(raw_line: str):
     else:
         # No timestamp, return as-is
         return raw_line.strip(), None
-async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None):
+async def process_ais_message(raw_message: str, source: str = "unknown", source_id: str = None, log_timestamp=None):
     """Process and store AIS message"""
     try:
         # Check if source is paused
