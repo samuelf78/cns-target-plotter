@@ -52,8 +52,13 @@ const isAtoN = (vessel) => {
 // Check if vessel is SAR (Search and Rescue) aircraft
 const isSARTarget = (vessel) => {
   if (!vessel) return false;
-  // SAR aircraft MMSIs start with 111
-  return vessel.mmsi && vessel.mmsi.startsWith('111');
+  // SAR aircraft: Any vessel that has transmitted a Type 9 message (SAR Aircraft Position Report)
+  // Type 9 is specifically for SAR aircraft, more reliable than MMSI format
+  if (vessel.last_position && vessel.last_position.message_type === 9) {
+    return true;
+  }
+  // Also check MMSI format as fallback (SAR aircraft MMSIs start with 111)
+  return vessel.mmsi && vessel.mmsi.toString().startsWith('111');
 };
 
 // Validate heading per AIS specification
