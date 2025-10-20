@@ -1198,20 +1198,20 @@ def run_real_time_streaming_test():
     return test_results
 
 if __name__ == "__main__":
-    # Run position validation tests
-    print("Starting Position Validation Tests...")
-    validation_results = test_position_validation_comprehensive()
+    # Run MarineISA API tests
+    print("Starting MarineISA API Integration Tests...")
+    marinesia_results = test_marinesia_comprehensive()
     
     print("\n" + "=" * 70)
-    print("🏁 TESTING COMPLETE")
+    print("🏁 MARINESIA TESTING COMPLETE")
     print("=" * 70)
     
-    validation_passed = sum(validation_results.values())
-    validation_total = len(validation_results)
+    marinesia_passed = sum(marinesia_results.values())
+    marinesia_total = len(marinesia_results)
     
-    print(f"Position Validation Tests: {validation_passed}/{validation_total} passed")
+    print(f"MarineISA API Tests: {marinesia_passed}/{marinesia_total} passed")
     
-    if validation_passed == validation_total:
-        print("🎉 ALL POSITION VALIDATION TESTS PASSED!")
+    if marinesia_passed == marinesia_total:
+        print("🎉 ALL MARINESIA API TESTS PASSED!")
     else:
-        print("⚠️ Some position validation tests failed - see details above")
+        print("⚠️ Some MarineISA API tests failed - see details above")
