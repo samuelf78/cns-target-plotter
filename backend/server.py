@@ -2719,9 +2719,73 @@ logger = logging.getLogger(__name__)
 
 @app.on_event("startup")
 async def startup_event():
-    global main_event_loop
+    global main_event_loop, enrichment_task
     main_event_loop = asyncio.get_event_loop()
     logger.info("Main event loop captured for stream handlers")
+    
+    # Start MarineISA enrichment worker if enabled
+    if marinesia_client:
+        enrichment_task = asyncio.create_task(marinesia_enrichment_worker())
+        logger.info("✅ MarineISA enrichment worker started")
+
+async def marinesia_enrichment_worker():
+    """Background worker to enrich vessels with MarineISA data"""
+    logger.info("🔄 MarineISA enrichment worker running")
+    while True:
+        try:
+            mmsi = await enrichment_queue.get()
+            
+            # Check if already enriched recently
+            existing = await db.vessel_enrichment.find_one({"mmsi": mmsi})
+            if existing:
+                # Skip if enriched in last hour
+                enriched_at = existing.get('enriched_at')
+                if enriched_at:
+                    from datetime import datetime
+                    try:
+                        enriched_time = datetime.fromisoformat(enriched_at.replace('Z', '+00:00'))
+                        if (datetime.now(timezone.utc) - enriched_time).seconds < 3600:
+                            continue
+                    except:
+                        pass
+            
+            logger.info(f"🔍 Enriching vessel MMSI: {mmsi}")
+            enriched_data = await marinesia_client.enrich_vessel(mmsi)
+            
+            if enriched_data.get('enriched'):
+                # Store enrichment
+                await db.vessel_enrichment.update_one(
+                    {"mmsi": mmsi},
+                    {
+                        "$set": {
+                            "mmsi": mmsi,
+                            "profile_data": enriched_data.get('profile'),
+                            "image_url": enriched_data.get('image_url'),
+                            "enriched_at": enriched_data.get('enriched_at')
+                        }
+                    },
+                    upsert=True
+                )
+                logger.info(f"✅ Enriched vessel {mmsi}")
+            else:
+                # Mark as not found
+                await db.vessel_enrichment.update_one(
+                    {"mmsi": mmsi},
+                    {
+                        "$set": {
+                            "mmsi": mmsi,
+                            "profile_data": {"not_found": True},
+                            "enriched_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    },
+                    upsert=True
+                )
+                logger.debug(f"ℹ️ No enrichment data for {mmsi}")
+                
+        except Exception as e:
+            logger.error(f"❌ Enrichment error: {e}")
+        
+        await asyncio.sleep(0.1)
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
