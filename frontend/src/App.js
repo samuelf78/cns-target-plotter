@@ -978,9 +978,18 @@ function App() {
     await selectVessel(vessel);
     
     // Then center map on it (no zoom change)
+    // Handle both vessels with last_position and direct lat/lon (e.g., Marinesia results)
+    let vesselLat, vesselLon;
+    
     if (hasValidDisplayPosition(vessel.last_position)) {
-      const vesselLat = getDisplayLat(vessel.last_position);
-      const vesselLon = getDisplayLon(vessel.last_position);
+      vesselLat = getDisplayLat(vessel.last_position);
+      vesselLon = getDisplayLon(vessel.last_position);
+    } else if (vessel.lat != null && vessel.lon != null) {
+      vesselLat = vessel.lat;
+      vesselLon = vessel.lon;
+    }
+    
+    if (vesselLat != null && vesselLon != null) {
       setMapCenter([vesselLat, vesselLon]);
     }
   };
