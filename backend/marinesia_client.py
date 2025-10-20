@@ -1,6 +1,6 @@
 """
-MarineISA API Client
-Handles all interactions with the MarineISA API for vessel enrichment
+Marinesia API Client
+Handles all interactions with the Marinesia API for vessel enrichment
 """
 import httpx
 import asyncio
@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-class MarineISAClient:
+class MarinesiaClient:
     def __init__(self, api_key: str, base_url: str = "https://api.marinesia.com/api/v1"):
         self.api_key = api_key
         self.base_url = base_url
