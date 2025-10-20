@@ -2738,7 +2738,6 @@ async def marinesia_enrichment_worker():
                 # Skip if enriched in last hour
                 enriched_at = existing.get('enriched_at')
                 if enriched_at:
-                    from datetime import datetime
                     try:
                         enriched_time = datetime.fromisoformat(enriched_at.replace('Z', '+00:00'))
                         if (datetime.now(timezone.utc) - enriched_time).seconds < 3600:
