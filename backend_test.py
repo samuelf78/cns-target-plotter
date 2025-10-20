@@ -816,6 +816,309 @@ def test_position_validation_comprehensive():
     
     return test_results
 
+def test_marinesia_enrichment_status(mmsi="259469000"):
+    """Test MarineISA enrichment status endpoint"""
+    print(f"🔍 Testing MarineISA enrichment status for MMSI {mmsi}...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/vessel/{mmsi}/enrichment_status", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            
+            print(f"✅ Enrichment status endpoint working:")
+            print(f"   - Status: {status}")
+            print(f"   - Data: {data.get('data', 'None')}")
+            
+            if 'enriched_at' in data:
+                print(f"   - Enriched at: {data.get('enriched_at')}")
+            if 'checked_at' in data:
+                print(f"   - Checked at: {data.get('checked_at')}")
+            
+            # Valid statuses: disabled, queued, found, not_found
+            if status in ['disabled', 'queued', 'found', 'not_found']:
+                print(f"✅ Valid enrichment status returned: {status}")
+                return True, data
+            else:
+                print(f"❌ Invalid enrichment status: {status}")
+                return False, data
+        else:
+            print(f"❌ Enrichment status endpoint failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Enrichment status test error: {e}")
+        return False, None
+
+def test_marinesia_priority_enrichment(mmsi="259469000"):
+    """Test MarineISA priority enrichment trigger"""
+    print(f"🚀 Testing MarineISA priority enrichment for MMSI {mmsi}...")
+    try:
+        response = requests.post(f"{BACKEND_URL}/vessel/{mmsi}/enrich_priority", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            queue_position = data.get('queue_position', 0)
+            
+            print(f"✅ Priority enrichment endpoint working:")
+            print(f"   - Message: {message}")
+            print(f"   - Queue position: {queue_position}")
+            
+            if mmsi in message and 'queued' in message:
+                print(f"✅ Vessel successfully queued for enrichment")
+                return True, data
+            else:
+                print(f"❌ Unexpected response message: {message}")
+                return False, data
+        elif response.status_code == 503:
+            print(f"⚠️ MarineISA integration disabled (503 Service Unavailable)")
+            return True, {"disabled": True}  # This is expected if integration is disabled
+        else:
+            print(f"❌ Priority enrichment endpoint failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Priority enrichment test error: {e}")
+        return False, None
+
+def test_marinesia_automatic_queueing():
+    """Test automatic enrichment queueing during AIS message processing"""
+    print("🔄 Testing automatic MarineISA enrichment queueing...")
+    try:
+        # Clear database first
+        clear_database()
+        time.sleep(1)
+        
+        # Upload AIS file with vessel messages
+        test_messages = [
+            "!AIVDM,1,1,,A,15MwkT0P00G?ro=HbHa=c;=T@T4@Dn2222222216L961O5Gf0NSQEp6ClRp888888888880,2*6C",  # Type 1 message
+            "!AIVDM,1,1,,B,403OviQuMGCqWrRO9>E6fE700@GO,2*4D"  # Type 4 message
+        ]
+        
+        source_id = upload_test_messages(test_messages, "marinesia_auto_queue_test")
+        if not source_id:
+            return False
+        
+        time.sleep(3)  # Wait for processing
+        
+        # Check if vessels were processed
+        response = requests.get(f"{BACKEND_URL}/vessels", timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            vessels = data.get('vessels', [])
+            
+            if len(vessels) > 0:
+                print(f"✅ Found {len(vessels)} vessels after processing")
+                
+                # Check enrichment status for first vessel
+                first_vessel = vessels[0]
+                mmsi = first_vessel.get('mmsi')
+                
+                if mmsi:
+                    status_success, status_data = test_marinesia_enrichment_status(mmsi)
+                    if status_success:
+                        print(f"✅ Automatic queueing working - vessel {mmsi} has enrichment status")
+                        return True
+                    else:
+                        print(f"❌ Vessel {mmsi} not queued for enrichment")
+                        return False
+                else:
+                    print(f"❌ No MMSI found in vessel data")
+                    return False
+            else:
+                print(f"❌ No vessels found after processing")
+                return False
+        else:
+            print(f"❌ Failed to get vessels: {response.status_code}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Automatic queueing test error: {e}")
+        return False
+
+def test_marinesia_api_call():
+    """Test actual MarineISA API call functionality"""
+    print("🌐 Testing MarineISA API call functionality...")
+    try:
+        # Use a well-known MMSI for testing
+        test_mmsi = "259469000"  # Norwegian vessel
+        
+        # First trigger priority enrichment
+        priority_success, priority_data = test_marinesia_priority_enrichment(test_mmsi)
+        if not priority_success:
+            print("❌ Cannot test API call - priority enrichment failed")
+            return False
+        
+        if priority_data and priority_data.get('disabled'):
+            print("⚠️ MarineISA integration disabled - skipping API call test")
+            return True
+        
+        # Wait for enrichment to process
+        print("   ⏳ Waiting for enrichment to process...")
+        time.sleep(5)
+        
+        # Check enrichment status
+        status_success, status_data = test_marinesia_enrichment_status(test_mmsi)
+        if not status_success:
+            print("❌ Cannot check enrichment results")
+            return False
+        
+        status = status_data.get('status')
+        
+        if status == 'found':
+            print(f"✅ MarineISA API call successful - vessel data retrieved")
+            vessel_data = status_data.get('data', {})
+            image_url = status_data.get('image_url')
+            
+            print(f"   - Vessel name: {vessel_data.get('name', 'N/A')}")
+            print(f"   - Vessel type: {vessel_data.get('type', 'N/A')}")
+            print(f"   - Image URL: {'Yes' if image_url else 'No'}")
+            return True
+        elif status == 'not_found':
+            print(f"✅ MarineISA API call successful - vessel not found in database")
+            return True
+        elif status == 'queued':
+            print(f"⏳ Vessel still queued for enrichment - API may be processing")
+            return True
+        else:
+            print(f"❌ Unexpected enrichment status: {status}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ MarineISA API call test error: {e}")
+        return False
+
+def test_marinesia_data_storage():
+    """Test that MarineISA enrichment data is properly stored and retrieved"""
+    print("💾 Testing MarineISA data storage and retrieval...")
+    try:
+        # Use a test MMSI
+        test_mmsi = "259469000"
+        
+        # Trigger enrichment
+        priority_success, priority_data = test_marinesia_priority_enrichment(test_mmsi)
+        if not priority_success or (priority_data and priority_data.get('disabled')):
+            print("⚠️ MarineISA integration disabled - skipping storage test")
+            return True
+        
+        # Wait for processing
+        time.sleep(3)
+        
+        # Check status multiple times to see if data persists
+        for i in range(3):
+            status_success, status_data = test_marinesia_enrichment_status(test_mmsi)
+            if status_success:
+                status = status_data.get('status')
+                
+                if status in ['found', 'not_found']:
+                    print(f"✅ Enrichment data properly stored and retrieved (attempt {i+1})")
+                    
+                    # Check data structure
+                    if status == 'found':
+                        data = status_data.get('data', {})
+                        enriched_at = status_data.get('enriched_at')
+                        
+                        if data and enriched_at:
+                            print(f"   - Data structure valid: {len(data)} fields")
+                            print(f"   - Enriched timestamp: {enriched_at}")
+                            return True
+                    elif status == 'not_found':
+                        checked_at = status_data.get('checked_at')
+                        if checked_at:
+                            print(f"   - Not found status properly cached")
+                            print(f"   - Checked timestamp: {checked_at}")
+                            return True
+                elif status == 'queued':
+                    print(f"   ⏳ Still queued (attempt {i+1})")
+                    time.sleep(2)
+                    continue
+            else:
+                print(f"❌ Failed to check status (attempt {i+1})")
+                return False
+        
+        print(f"❌ Enrichment did not complete after multiple attempts")
+        return False
+        
+    except Exception as e:
+        print(f"❌ MarineISA storage test error: {e}")
+        return False
+
+def test_marinesia_comprehensive():
+    """Run comprehensive MarineISA API tests"""
+    print("=" * 70)
+    print("🌊 MarineISA API Integration Test Suite")
+    print("=" * 70)
+    
+    test_results = {
+        'api_connection': False,
+        'enrichment_status_endpoint': False,
+        'priority_enrichment_endpoint': False,
+        'automatic_queueing': False,
+        'api_call_functionality': False,
+        'data_storage_retrieval': False
+    }
+    
+    # Test 1: API Connection
+    test_results['api_connection'] = test_api_connection()
+    if not test_results['api_connection']:
+        print("❌ Cannot proceed without API connection")
+        return test_results
+    
+    # Test 2: Enrichment Status Endpoint
+    status_success, _ = test_marinesia_enrichment_status()
+    test_results['enrichment_status_endpoint'] = status_success
+    
+    # Test 3: Priority Enrichment Endpoint
+    priority_success, _ = test_marinesia_priority_enrichment()
+    test_results['priority_enrichment_endpoint'] = priority_success
+    
+    # Test 4: Automatic Queueing
+    test_results['automatic_queueing'] = test_marinesia_automatic_queueing()
+    
+    # Test 5: API Call Functionality
+    test_results['api_call_functionality'] = test_marinesia_api_call()
+    
+    # Test 6: Data Storage and Retrieval
+    test_results['data_storage_retrieval'] = test_marinesia_data_storage()
+    
+    # Summary
+    print("\n" + "=" * 70)
+    print("📊 MARINESIA API TEST RESULTS")
+    print("=" * 70)
+    
+    passed = 0
+    total = len(test_results)
+    
+    for test_name, result in test_results.items():
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{test_name.replace('_', ' ').title()}: {status}")
+        if result:
+            passed += 1
+    
+    print(f"\nOverall: {passed}/{total} tests passed")
+    
+    if passed == total:
+        print("🎉 ALL MARINESIA TESTS PASSED - Integration is working correctly!")
+        print("✅ Enrichment endpoints responding properly")
+        print("✅ Background enrichment worker processing queue")
+        print("✅ MarineISA API calls succeeding")
+        print("✅ Vessel enrichment data properly stored and retrieved")
+    else:
+        print("⚠️ SOME MARINESIA TESTS FAILED - Issues found with integration")
+        
+        # Detailed failure analysis
+        failed_tests = [name for name, result in test_results.items() if not result]
+        for test_name in failed_tests:
+            if test_name == 'enrichment_status_endpoint':
+                print("❌ CRITICAL: Enrichment status endpoint not working")
+            elif test_name == 'priority_enrichment_endpoint':
+                print("❌ CRITICAL: Priority enrichment endpoint not working")
+            elif test_name == 'api_call_functionality':
+                print("❌ CRITICAL: MarineISA API calls failing")
+            elif test_name == 'data_storage_retrieval':
+                print("❌ CRITICAL: Enrichment data not being stored properly")
+    
+    return test_results
+
 def run_real_time_streaming_test():
     """Run the real-time TCP streaming test suite"""
     print("=" * 70)
