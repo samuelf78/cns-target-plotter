@@ -1939,9 +1939,9 @@ function App() {
                       </div>
                     )}
                     
-                    {/* MarineISA Enrichment Status */}
+                    {/* Marinesia Enrichment Status */}
                     <div className="info-section-title" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                      MarineISA Database
+                      Marinesia Database
                     </div>
                     <div className="info-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
