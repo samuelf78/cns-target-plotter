@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend Comparison Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8a 100%);
+            color: #fff;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .backend-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .backend-panel h2 {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+        }
+        .mongodb { border-left: 4px solid #4CAF50; }
+        .sqlite { border-left: 4px solid #2196F3; }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .online { background: #4CAF50; }
+        .offline { background: #f44336; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }
+        .stat-label {
+            font-weight: bold;
+            opacity: 0.8;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #4fc3f7;
+        }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: scale(1.05);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .vessel-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .vessel-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            border-left: 3px solid #4fc3f7;
+        }
+        .vessel-item.enriched {
+            border-left-color: #4CAF50;
+        }
+        .enriched-badge {
+            display: inline-block;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .test-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            opacity: 0.7;
+        }
+        pre {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚢 Backend Comparison Test</h1>
+        
+        <div class="comparison">
+            <!-- MongoDB Backend -->
+            <div class="backend-panel mongodb">
+                <h2>MongoDB Backend (Port 8001)</h2>
+                <div class="status">
+                    <div class="status-indicator" id="mongo-status"></div>
+                    <span id="mongo-status-text">Checking...</span>
+                </div>
+                
+                <div id="mongo-stats">
+                    <div class="stat">
+                        <span class="stat-label">Vessels:</span>
+                        <span class="stat-value" id="mongo-vessels">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Database:</span>
+                        <span class="stat-value">MongoDB</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Features:</span>
+                        <span class="stat-value">Full AIS Processing</span>
+                    </div>
+                </div>
+                
+                <div class="vessel-list" id="mongo-vessels-list">
+                    <div class="loading">Loading vessels...</div>
+                </div>
+            </div>
+            
+            <!-- SQLite Backend -->
+            <div class="backend-panel sqlite">
+                <h2>SQLite Backend (Port 8002)</h2>
+                <div class="status">
+                    <div class="status-indicator" id="sqlite-status"></div>
+                    <span id="sqlite-status-text">Checking...</span>
+                </div>
+                
+                <div id="sqlite-stats">
+                    <div class="stat">
+                        <span class="stat-label">Vessels:</span>
+                        <span class="stat-value" id="sqlite-vessels">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Enriched:</span>
+                        <span class="stat-value" id="sqlite-enriched">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Database:</span>
+                        <span class="stat-value">SQLite</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">MarineISA:</span>
+                        <span class="stat-value" id="marinesia-status">-</span>
+                    </div>
+                </div>
+                
+                <div class="vessel-list" id="sqlite-vessels-list">
+                    <div class="loading">Loading vessels...</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Test Section -->
+        <div class="test-section">
+            <h2>🧪 Test MarineISA Integration</h2>
+            <p style="margin-bottom: 15px;">Add a Norwegian vessel to SQLite backend and watch it get enriched with MarineISA data:</p>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="testVessel('257196000')">Test MMSI: 257196000 (HAROY)</button>
+                <button onclick="testVessel('259468000')">Test MMSI: 259468000</button>
+                <button onclick="testVessel('258763000')">Test MMSI: 258763000 (NORNE)</button>
+                <button onclick="refresh()">🔄 Refresh Data</button>
+            </div>
+            
+            <div id="test-results" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        const MONGO_URL = window.location.origin;
+        const SQLITE_URL = window.location.protocol + '//' + window.location.hostname + ':8002';
+        
+        async function checkMongoDB() {
+            try {
+                const response = await fetch(`${MONGO_URL}/api/vessels`);
+                const data = await response.json();
+                
+                document.getElementById('mongo-status').className = 'status-indicator online';
+                document.getElementById('mongo-status-text').textContent = 'Online ✓';
+                document.getElementById('mongo-vessels').textContent = data.vessels.length;
+                
+                // Show some vessels
+                const vesselsList = document.getElementById('mongo-vessels-list');
+                vesselsList.innerHTML = data.vessels.slice(0, 5).map(v => `
+                    <div class="vessel-item">
+                        <strong>${v.name || v.mmsi}</strong><br>
+                        <small>MMSI: ${v.mmsi} | Type: ${v.ship_type_text || 'Unknown'}</small>
+                    </div>
+                `).join('');
+                
+            } catch (error) {
+                document.getElementById('mongo-status').className = 'status-indicator offline';
+                document.getElementById('mongo-status-text').textContent = 'Offline ✗';
+                console.error('MongoDB error:', error);
+            }
+        }
+        
+        async function checkSQLite() {
+            try {
+                const response = await fetch(`${SQLITE_URL}/api/vessels`);
+                const data = await response.json();
+                
+                document.getElementById('sqlite-status').className = 'status-indicator online';
+                document.getElementById('sqlite-status-text').textContent = 'Online ✓';
+                document.getElementById('sqlite-vessels').textContent = data.count;
+                
+                // Get enrichment status
+                const statusResponse = await fetch(`${SQLITE_URL}/api/enrichment-status`);
+                const statusData = await statusResponse.json();
+                document.getElementById('sqlite-enriched').textContent = 
+                    `${statusData.enriched_vessels} (${statusData.enrichment_percentage}%)`;
+                document.getElementById('marinesia-status').textContent = 
+                    statusData.marinesia_enabled ? '✓ Enabled' : '✗ Disabled';
+                
+                // Show vessels with enrichment
+                const vesselsList = document.getElementById('sqlite-vessels-list');
+                vesselsList.innerHTML = data.vessels.map(v => {
+                    const enriched = v.marinesia_profile ? true : false;
+                    const name = enriched ? v.marinesia_profile.data.name : (v.name || v.mmsi);
+                    return `
+                        <div class="vessel-item ${enriched ? 'enriched' : ''}">
+                            <strong>${name}</strong>
+                            ${enriched ? '<span class="enriched-badge">MarineISA ✓</span>' : ''}
+                            <br>
+                            <small>MMSI: ${v.mmsi}</small>
+                            ${enriched ? `<br><small>IMO: ${v.marinesia_profile.data.imo} | ${v.marinesia_profile.data.ship_type}</small>` : ''}
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (error) {
+                document.getElementById('sqlite-status').className = 'status-indicator offline';
+                document.getElementById('sqlite-status-text').textContent = 'Offline ✗';
+                console.error('SQLite error:', error);
+            }
+        }
+        
+        async function testVessel(mmsi) {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="loading">Adding vessel and requesting enrichment...</div>';
+            
+            try {
+                const response = await fetch(`${SQLITE_URL}/api/test-vessel?mmsi=${mmsi}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = `
+                    <div style="background: rgba(76, 175, 80, 0.2); padding: 15px; border-radius: 5px; border-left: 4px solid #4CAF50;">
+                        <strong>✓ Success!</strong><br>
+                        ${data.message}<br><br>
+                        <em>Refreshing in 3 seconds to show enriched data...</em>
+                    </div>
+                `;
+                
+                // Wait and refresh
+                setTimeout(refresh, 3000);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div style="background: rgba(244, 67, 54, 0.2); padding: 15px; border-radius: 5px; border-left: 4px solid #f44336;">
+                        <strong>✗ Error!</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function refresh() {
+            checkMongoDB();
+            checkSQLite();
+        }
+        
+        // Initial load
+        refresh();
+        
+        // Auto-refresh every 10 seconds
+        setInterval(refresh, 10000);
+    </script>
+</body>
+</html>
