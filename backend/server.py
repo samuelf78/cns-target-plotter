@@ -36,13 +36,13 @@ try:
     MARINESIA_API_KEY = os.getenv('MARINESIA_API_KEY')
     if MARINESIA_ENABLED and MARINESIA_API_KEY:
         marinesia_client = MarineISAClient(MARINESIA_API_KEY)
-        logging.info("✅ MarineISA integration enabled")
+        print("✅ MarineISA integration enabled")
     else:
         marinesia_client = None
-        logging.info("MarineISA integration disabled")
+        print("MarineISA integration disabled")
 except Exception as e:
     marinesia_client = None
-    logging.warning(f"MarineISA client not available: {e}")
+    print(f"MarineISA client not available: {e}")
 
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
