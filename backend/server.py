@@ -2638,6 +2638,131 @@ async def enrich_vessel_priority(mmsi: str):
         "queue_position": enrichment_queue.qsize()
     }
 
+@api_router.get("/marinesia/search/{mmsi}")
+async def search_marinesia(mmsi: str):
+    """Search for a vessel in Marinesia database by MMSI"""
+    if not marinesia_client:
+        raise HTTPException(status_code=503, detail="Marinesia integration not enabled")
+    
+    try:
+        # Fetch profile
+        profile = await marinesia_client.get_vessel_profile(mmsi)
+        if not profile or profile.get('not_found'):
+            return {
+                "found": False,
+                "message": f"Vessel {mmsi} not found in Marinesia database"
+            }
+        
+        # Fetch latest location
+        latest_location = await marinesia_client.get_latest_location(mmsi)
+        
+        # Fetch image
+        image_url = await marinesia_client.get_vessel_image(mmsi)
+        
+        # Store enrichment data
+        await db.vessel_enrichment.update_one(
+            {"mmsi": mmsi},
+            {
+                "$set": {
+                    "mmsi": mmsi,
+                    "profile_data": profile.get('data') if isinstance(profile, dict) and 'data' in profile else profile,
+                    "latest_location": latest_location,
+                    "image_url": image_url,
+                    "enriched_at": datetime.now(timezone.utc).isoformat()
+                }
+            },
+            upsert=True
+        )
+        
+        # Create or update vessel in local database
+        vessel_data = profile.get('data') if isinstance(profile, dict) and 'data' in profile else profile
+        if vessel_data:
+            vessel_update = {
+                "mmsi": mmsi,
+                "name": vessel_data.get('name'),
+                "callsign": vessel_data.get('callsign'),
+                "imo": vessel_data.get('imo'),
+                "ship_type": vessel_data.get('ship_type'),
+                "country": vessel_data.get('country'),
+                "length": vessel_data.get('length'),
+                "width": vessel_data.get('width'),
+                "source": "Marinesia",
+                "last_seen": datetime.now(timezone.utc).isoformat()
+            }
+            
+            # Add latest location if available
+            if latest_location:
+                vessel_update["lat"] = latest_location.get('lat')
+                vessel_update["lon"] = latest_location.get('lng')
+            
+            await db.vessels.update_one(
+                {"mmsi": mmsi},
+                {"$set": vessel_update},
+                upsert=True
+            )
+        
+        return {
+            "found": True,
+            "vessel": vessel_data,
+            "latest_location": latest_location,
+            "image_url": image_url
+        }
+        
+    except Exception as e:
+        logger.error(f"Error searching Marinesia for MMSI {mmsi}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/marinesia/history/{mmsi}")
+async def get_marinesia_history(mmsi: str, limit: int = 100):
+    """Get historical locations from Marinesia for a vessel"""
+    if not marinesia_client:
+        raise HTTPException(status_code=503, detail="Marinesia integration not enabled")
+    
+    try:
+        history = await marinesia_client.get_historical_locations(mmsi, limit=limit)
+        
+        # Store historical positions in database
+        if history:
+            positions_to_insert = []
+            for pos in history:
+                position_doc = {
+                    "mmsi": mmsi,
+                    "lat": pos.get('lat'),
+                    "lon": pos.get('lng'),
+                    "display_lat": pos.get('lat'),
+                    "display_lon": pos.get('lng'),
+                    "position_valid": True,
+                    "speed": pos.get('sog'),
+                    "course": pos.get('cog'),
+                    "heading": pos.get('hdt'),
+                    "timestamp": pos.get('ts'),
+                    "source": "Marinesia",
+                    "is_vdo": False
+                }
+                positions_to_insert.append(position_doc)
+            
+            if positions_to_insert:
+                # Insert without duplicates (check timestamp)
+                for pos_doc in positions_to_insert:
+                    await db.positions.update_one(
+                        {"mmsi": mmsi, "timestamp": pos_doc['timestamp'], "source": "Marinesia"},
+                        {"$set": pos_doc},
+                        upsert=True
+                    )
+                
+                logger.info(f"Stored {len(positions_to_insert)} Marinesia historical positions for {mmsi}")
+        
+        return {
+            "mmsi": mmsi,
+            "count": len(history),
+            "positions": history
+        }
+        
+    except Exception as e:
+        logger.error(f"Error fetching Marinesia history for MMSI {mmsi}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @api_router.get("/history/{mmsi}")
 async def get_vessel_history(mmsi: str):
     """Get complete historical data for an MMSI - properly merged from all sources"""
