@@ -1340,6 +1340,12 @@ function App() {
           if (trackResponse.data && trackResponse.data.track) {
             setVesselTrack(trackResponse.data.track);
           }
+          
+          // Refresh enrichment status to get newly populated profile data
+          await checkMarineisaEnrichment(mmsi);
+          
+          // Reload vessel list to show updated name/callsign
+          loadVessels();
         }
       } else {
         toast.info('No historical positions available from Marinesia');
