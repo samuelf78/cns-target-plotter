@@ -2051,6 +2051,12 @@ function App() {
                     
                     {marineisaData && (
                       <>
+                        {marineisaData.callsign && (
+                          <div className="info-row">
+                            <span className="info-label">Verified Callsign:</span>
+                            <span className="info-value" style={{ color: '#4CAF50' }}>{marineisaData.callsign}</span>
+                          </div>
+                        )}
                         {marineisaData.name && (
                           <div className="info-row">
                             <span className="info-label">Verified Name:</span>
