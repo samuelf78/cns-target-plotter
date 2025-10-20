@@ -26,6 +26,24 @@ import math
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+# Load MarineISA environment variables
+load_dotenv('.env.marinesia')
+
+# Import MarineISA client
+try:
+    from marinesia_client import MarineISAClient
+    MARINESIA_ENABLED = os.getenv('MARINESIA_ENABLED', 'true').lower() == 'true'
+    MARINESIA_API_KEY = os.getenv('MARINESIA_API_KEY')
+    if MARINESIA_ENABLED and MARINESIA_API_KEY:
+        marinesia_client = MarineISAClient(MARINESIA_API_KEY)
+        logging.info("✅ MarineISA integration enabled")
+    else:
+        marinesia_client = None
+        logging.info("MarineISA integration disabled")
+except Exception as e:
+    marinesia_client = None
+    logging.warning(f"MarineISA client not available: {e}")
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
