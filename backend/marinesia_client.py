@@ -117,9 +117,92 @@ class MarinesiaClient:
             logger.error(f"Error fetching vessel image for MMSI {mmsi}: {e}")
             return None
     
+    async def get_latest_location(self, mmsi: str) -> Optional[Dict[str, Any]]:
+        """Get latest vessel location by MMSI"""
+        cache_key = f"latest_location_{mmsi}"
+        
+        # Short cache for location (5 minutes)
+        if cache_key in self.cache:
+            cached_data, cached_time = self.cache[cache_key]
+            if datetime.now() - cached_time < timedelta(minutes=5):
+                return cached_data
+            else:
+                del self.cache[cache_key]
+        
+        try:
+            await self._rate_limit()
+            
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(
+                    f"{self.base_url}/vessel/{mmsi}/location/latest",
+                    params={"key": self.api_key}
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('error') is False and result.get('data'):
+                        data = result['data']
+                        self._set_cache(cache_key, data)
+                        logger.info(f"Successfully fetched latest location for MMSI {mmsi}")
+                        return data
+                    return None
+                elif response.status_code == 404:
+                    logger.debug(f"Latest location not found for MMSI {mmsi}")
+                    return None
+                else:
+                    logger.warning(f"Marinesia API returned status {response.status_code} for latest location {mmsi}")
+                    return None
+                    
+        except Exception as e:
+            logger.error(f"Error fetching latest location for MMSI {mmsi}: {e}")
+            return None
+    
+    async def get_historical_locations(self, mmsi: str, limit: int = 100, hours_back: int = 24) -> list:
+        """Get historical vessel locations by MMSI"""
+        cache_key = f"history_{mmsi}_{limit}_{hours_back}"
+        
+        # Cache historical data for 1 hour
+        if cache_key in self.cache:
+            cached_data, cached_time = self.cache[cache_key]
+            if datetime.now() - cached_time < timedelta(hours=1):
+                return cached_data
+            else:
+                del self.cache[cache_key]
+        
+        try:
+            await self._rate_limit()
+            
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.get(
+                    f"{self.base_url}/vessel/{mmsi}/location",
+                    params={
+                        "key": self.api_key,
+                        "limit": limit
+                    }
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('error') is False and result.get('data'):
+                        data = result['data']
+                        self._set_cache(cache_key, data)
+                        logger.info(f"Successfully fetched {len(data)} historical locations for MMSI {mmsi}")
+                        return data
+                    return []
+                elif response.status_code == 404:
+                    logger.debug(f"Historical locations not found for MMSI {mmsi}")
+                    return []
+                else:
+                    logger.warning(f"Marinesia API returned status {response.status_code} for history {mmsi}")
+                    return []
+                    
+        except Exception as e:
+            logger.error(f"Error fetching historical locations for MMSI {mmsi}: {e}")
+            return []
+    
     async def enrich_vessel(self, mmsi: str) -> Dict[str, Any]:
         """
-        Comprehensive enrichment: fetch profile and image
+        Comprehensive enrichment: fetch profile, image, and latest location
         Returns enriched data dictionary
         """
         enriched = {
@@ -127,6 +210,7 @@ class MarinesiaClient:
             'enriched_at': datetime.now().isoformat(),
             'profile': None,
             'image_url': None,
+            'latest_location': None,
             'enriched': False
         }
         
@@ -140,5 +224,10 @@ class MarinesiaClient:
             image_url = await self.get_vessel_image(mmsi)
             if image_url:
                 enriched['image_url'] = image_url
+            
+            # Get latest location
+            latest_location = await self.get_latest_location(mmsi)
+            if latest_location:
+                enriched['latest_location'] = latest_location
         
         return enriched
