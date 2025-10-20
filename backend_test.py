@@ -1557,20 +1557,42 @@ def run_real_time_streaming_test():
     return test_results
 
 if __name__ == "__main__":
-    # Run MarineISA API tests
-    print("Starting MarineISA API Integration Tests...")
-    marinesia_results = test_marinesia_comprehensive()
+    # Run Expanded Marinesia Integration Tests
+    print("Starting Expanded Marinesia Integration Tests...")
+    print("Testing with MMSI: 247405600 (verified to exist in Marinesia database)")
+    print("")
+    
+    marinesia_results = test_expanded_marinesia_integration()
     
     print("\n" + "=" * 70)
-    print("🏁 MARINESIA TESTING COMPLETE")
+    print("🏁 EXPANDED MARINESIA INTEGRATION TESTING COMPLETE")
     print("=" * 70)
     
     marinesia_passed = sum(marinesia_results.values())
     marinesia_total = len(marinesia_results)
     
-    print(f"MarineISA API Tests: {marinesia_passed}/{marinesia_total} passed")
+    print(f"Expanded Marinesia Integration Tests: {marinesia_passed}/{marinesia_total} passed")
     
     if marinesia_passed == marinesia_total:
-        print("🎉 ALL MARINESIA API TESTS PASSED!")
+        print("🎉 ALL EXPANDED MARINESIA INTEGRATION TESTS PASSED!")
+        print("✅ Search endpoint successfully fetches and stores Marinesia vessel data")
+        print("✅ Historical locations are retrieved and stored in database")
+        print("✅ Latest location appears in enrichment status")
+        print("✅ Track endpoint blends Marinesia and local data")
+        print("✅ No errors in backend logs")
     else:
-        print("⚠️ Some MarineISA API tests failed - see details above")
+        print("⚠️ Some Expanded Marinesia Integration tests failed - see details above")
+        
+        # Check backend logs for errors
+        print("\n🔍 Checking backend logs for errors...")
+        try:
+            import subprocess
+            result = subprocess.run(['tail', '-n', '50', '/var/log/supervisor/backend.err.log'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0 and result.stdout.strip():
+                print("Recent backend error logs:")
+                print(result.stdout.strip()[-1000:])  # Last 1000 chars
+            else:
+                print("No recent backend errors found")
+        except Exception as e:
+            print(f"Could not check backend logs: {e}")
