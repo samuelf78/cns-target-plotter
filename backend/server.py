@@ -2720,6 +2720,60 @@ async def get_marinesia_history(mmsi: str, limit: int = 100):
         raise HTTPException(status_code=503, detail="Marinesia integration not enabled")
     
     try:
+        # First, check if we have vessel profile - if not, fetch it
+        enrichment = await db.vessel_enrichment.find_one({"mmsi": mmsi})
+        if not enrichment or not enrichment.get('profile_data'):
+            logger.info(f"Fetching Marinesia profile for {mmsi} (not yet enriched)")
+            # Fetch profile, latest location, and image
+            profile = await marinesia_client.get_vessel_profile(mmsi)
+            latest_location = await marinesia_client.get_latest_location(mmsi)
+            image_url = await marinesia_client.get_vessel_image(mmsi)
+            
+            # Store enrichment data if profile exists
+            if profile and not profile.get('not_found'):
+                profile_data = profile.get('data') if isinstance(profile, dict) and 'data' in profile else profile
+                
+                await db.vessel_enrichment.update_one(
+                    {"mmsi": mmsi},
+                    {
+                        "$set": {
+                            "mmsi": mmsi,
+                            "profile_data": profile_data,
+                            "latest_location": latest_location,
+                            "image_url": image_url,
+                            "enriched_at": datetime.now(timezone.utc).isoformat()
+                        }
+                    },
+                    upsert=True
+                )
+                
+                # Create/update vessel in local database
+                if profile_data:
+                    vessel_update = {
+                        "mmsi": mmsi,
+                        "name": profile_data.get('name'),
+                        "callsign": profile_data.get('callsign'),
+                        "imo": profile_data.get('imo'),
+                        "ship_type": profile_data.get('ship_type'),
+                        "country": profile_data.get('country'),
+                        "length": profile_data.get('length'),
+                        "width": profile_data.get('width'),
+                        "source": "Marinesia",
+                        "last_seen": datetime.now(timezone.utc).isoformat()
+                    }
+                    
+                    if latest_location:
+                        vessel_update["lat"] = latest_location.get('lat')
+                        vessel_update["lon"] = latest_location.get('lng')
+                    
+                    await db.vessels.update_one(
+                        {"mmsi": mmsi},
+                        {"$set": vessel_update},
+                        upsert=True
+                    )
+                    logger.info(f"Stored Marinesia profile for {mmsi}: {profile_data.get('name')}")
+        
+        # Now fetch historical positions
         history = await marinesia_client.get_historical_locations(mmsi, limit=limit)
         
         # Store historical positions in database
