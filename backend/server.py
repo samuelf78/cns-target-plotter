@@ -2615,6 +2615,7 @@ async def get_vessel_enrichment_status(mmsi: str):
                 "status": "found",
                 "data": profile_data,
                 "image_url": enrichment.get('image_url'),
+                "latest_location": enrichment.get('latest_location'),
                 "enriched_at": enrichment.get('enriched_at')
             }
     
