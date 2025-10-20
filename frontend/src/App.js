@@ -1939,6 +1939,84 @@ function App() {
                       </div>
                     )}
                     
+                    {/* MarineISA Enrichment Status */}
+                    <div className="info-section-title" style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                      MarineISA Database
+                    </div>
+                    <div className="info-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="info-label">Status:</span>
+                        {marineisaStatus === 'found' && (
+                          <span style={{ color: '#4CAF50', fontWeight: 'bold' }}>✓ Data Found</span>
+                        )}
+                        {marineisaStatus === 'queued' && (
+                          <span style={{ color: '#FFC107', fontWeight: 'bold' }}>⏳ In Queue</span>
+                        )}
+                        {marineisaStatus === 'not_found' && (
+                          <span style={{ color: '#FF9800', fontWeight: 'bold' }}>✗ Not Found</span>
+                        )}
+                        {marineisaStatus === 'unknown' && (
+                          <span style={{ color: '#9E9E9E', fontWeight: 'bold' }}>? Unknown</span>
+                        )}
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => refreshMarineisaData(selectedVessel.mmsi)}
+                        disabled={refreshingMarineisa}
+                        style={{ fontSize: '12px', padding: '4px 12px' }}
+                      >
+                        {refreshingMarineisa ? 'Refreshing...' : 'Refresh'}
+                      </Button>
+                    </div>
+                    
+                    {marineisaData && (
+                      <>
+                        {marineisaData.name && (
+                          <div className="info-row">
+                            <span className="info-label">Verified Name:</span>
+                            <span className="info-value" style={{ color: '#4CAF50' }}>{marineisaData.name}</span>
+                          </div>
+                        )}
+                        {marineisaData.imo && (
+                          <div className="info-row">
+                            <span className="info-label">IMO Number:</span>
+                            <span className="info-value">{marineisaData.imo}</span>
+                          </div>
+                        )}
+                        {marineisaData.ship_type && (
+                          <div className="info-row">
+                            <span className="info-label">Verified Type:</span>
+                            <span className="info-value" style={{ color: '#4CAF50' }}>{marineisaData.ship_type}</span>
+                          </div>
+                        )}
+                        {(marineisaData.length || marineisaData.width) && (
+                          <div className="info-row">
+                            <span className="info-label">Dimensions:</span>
+                            <span className="info-value">
+                              {marineisaData.length}m × {marineisaData.width}m
+                            </span>
+                          </div>
+                        )}
+                        {marineisaData.image_url && (
+                          <div className="info-row" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '8px' }}>
+                            <span className="info-label">Vessel Photo:</span>
+                            <img 
+                              src={marineisaData.image_url} 
+                              alt="Vessel" 
+                              style={{ 
+                                width: '100%', 
+                                borderRadius: '8px',
+                                maxHeight: '200px',
+                                objectFit: 'cover'
+                              }}
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
                     {selectedVessel.ship_type_text && (
                       <div className="info-row">
                         <span className="info-label">Ship Type:</span>
