@@ -2047,6 +2047,70 @@ async def get_vessel(mmsi: str):
                 return vessel
             raise HTTPException(status_code=404, detail="Vessel not found")
 
+@api_router.get("/vessel/{mmsi}/marinesia-status")
+async def get_marinesia_status(mmsi: str):
+    """Get MarineISA enrichment status for a vessel"""
+    if not marinesia_client:
+        return {"status": "disabled", "data": None}
+    
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        
+        # Check if vessel has enrichment data
+        async with db.execute("""
+            SELECT profile_data, image_url, enriched_at 
+            FROM vessel_enrichment 
+            WHERE mmsi = ?
+        """, (mmsi,)) as cursor:
+            row = await cursor.fetchone()
+            
+            if row and row['profile_data']:
+                try:
+                    profile_data = json.loads(row['profile_data'])
+                    # Check if it's a "not found" marker
+                    if profile_data.get('not_found'):
+                        return {
+                            "status": "not_found",
+                            "data": None,
+                            "checked_at": row['enriched_at']
+                        }
+                    else:
+                        # Has real data
+                        return {
+                            "status": "found",
+                            "data": profile_data.get('data'),
+                            "image_url": row['image_url'],
+                            "enriched_at": row['enriched_at']
+                        }
+                except:
+                    pass
+        
+        # Check if in queue
+        # For now, if not enriched, assume it's queued
+        return {"status": "queued", "data": None}
+
+@api_router.post("/vessel/{mmsi}/enrich-priority")
+async def enrich_vessel_priority(mmsi: str):
+    """Trigger priority enrichment for a vessel"""
+    if not marinesia_client:
+        raise HTTPException(status_code=503, detail="MarineISA integration not enabled")
+    
+    # Add to enrichment queue (with priority by clearing old attempts)
+    async with aiosqlite.connect(DB_PATH) as db:
+        # Delete old enrichment attempt
+        await db.execute("DELETE FROM vessel_enrichment WHERE mmsi = ?", (mmsi,))
+        await db.commit()
+    
+    # Queue for enrichment
+    await enrichment_queue.put(mmsi)
+    
+    return {
+        "message": f"Vessel {mmsi} queued for priority enrichment",
+        "queue_position": enrichment_queue.qsize()
+    }
+
+
+
 @api_router.post("/search")
 async def search_vessels(query: SearchQuery):
     """Search vessels based on criteria"""
