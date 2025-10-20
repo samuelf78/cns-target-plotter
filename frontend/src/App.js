@@ -376,6 +376,9 @@ function App() {
     search: ''
   });
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [marineisaData, setMarineisaData] = useState(null);
+  const [marineisaStatus, setMarineisaStatus] = useState('unknown'); // 'unknown', 'queued', 'not_found', 'found'
+  const [refreshingMarineisa, setRefreshingMarineisa] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
