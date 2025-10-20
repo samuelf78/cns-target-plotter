@@ -378,7 +378,9 @@ function App() {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [marineisaData, setMarineisaData] = useState(null);
   const [marineisaStatus, setMarineisaStatus] = useState('unknown'); // 'unknown', 'queued', 'not_found', 'found'
+  const [marineisaLatestLocation, setMarineisaLatestLocation] = useState(null);
   const [refreshingMarineisa, setRefreshingMarineisa] = useState(false);
+  const [loadingMarinesiaHistory, setLoadingMarinesiaHistory] = useState(false);
   const [searchMMSI, setSearchMMSI] = useState('');
   const [searchName, setSearchName] = useState('');
   const [uploadProgress, setUploadProgress] = useState(false);
