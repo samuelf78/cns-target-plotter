@@ -1295,11 +1295,13 @@ function App() {
       if (response.data) {
         setMarineisaStatus(response.data.status || 'unknown');
         setMarineisaData(response.data.data || null);
+        setMarineisaLatestLocation(response.data.latest_location || null);
       }
     } catch (error) {
       // If endpoint doesn't exist, that's okay
       setMarineisaStatus('unknown');
       setMarineisaData(null);
+      setMarineisaLatestLocation(null);
     }
   };
 
@@ -1318,6 +1320,35 @@ function App() {
       toast.error('Failed to trigger enrichment');
     } finally {
       setRefreshingMarineisa(false);
+    }
+  };
+  
+  const loadMarinesiaHistory = async (mmsi) => {
+    if (!mmsi) return;
+    
+    setLoadingMarinesiaHistory(true);
+    try {
+      toast.info('Loading Marinesia historical positions...');
+      const response = await axios.get(`${API}/marinesia/history/${mmsi}?limit=200`);
+      
+      if (response.data && response.data.count > 0) {
+        toast.success(`Loaded ${response.data.count} historical positions from Marinesia`);
+        
+        // Reload the vessel track to include Marinesia data
+        if (selectedVessel) {
+          const trackResponse = await axios.get(`${API}/track/${mmsi}?limit=1000`);
+          if (trackResponse.data && trackResponse.data.track) {
+            setVesselTrack(trackResponse.data.track);
+          }
+        }
+      } else {
+        toast.info('No historical positions available from Marinesia');
+      }
+    } catch (error) {
+      console.error('Error loading Marinesia history:', error);
+      toast.error('Failed to load Marinesia history');
+    } finally {
+      setLoadingMarinesiaHistory(false);
     }
   };
 
