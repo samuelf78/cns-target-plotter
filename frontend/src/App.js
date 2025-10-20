@@ -2099,18 +2099,18 @@ function App() {
                             />
                           </div>
                         )}
-                        {marinesiaLatestLocation && (
+                        {marineisaLatestLocation && (
                           <>
                             <div className="info-row">
                               <span className="info-label">Latest Marinesia Position:</span>
                               <span className="info-value">
-                                {marinesiaLatestLocation.lat?.toFixed(5)}°, {marinesiaLatestLocation.lng?.toFixed(5)}°
+                                {marineisaLatestLocation.lat?.toFixed(5)}°, {marineisaLatestLocation.lng?.toFixed(5)}°
                               </span>
                             </div>
                             <div className="info-row">
                               <span className="info-label">Marinesia Timestamp:</span>
                               <span className="info-value">
-                                {new Date(marinesiaLatestLocation.ts).toLocaleString()}
+                                {new Date(marineisaLatestLocation.ts).toLocaleString()}
                               </span>
                             </div>
                           </>
