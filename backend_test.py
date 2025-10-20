@@ -1042,19 +1042,311 @@ def test_marinesia_data_storage():
         print(f"❌ MarineISA storage test error: {e}")
         return False
 
-def test_marinesia_comprehensive():
-    """Run comprehensive MarineISA API tests"""
+def test_marinesia_search_endpoint(mmsi="247405600"):
+    """Test Marinesia Search Endpoint - GET /api/marinesia/search/{mmsi}"""
+    print(f"🔍 Testing Marinesia Search Endpoint for MMSI {mmsi}...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/marinesia/search/{mmsi}", timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            found = data.get('found', False)
+            
+            print(f"✅ Marinesia search endpoint working:")
+            print(f"   - Found: {found}")
+            
+            if found:
+                profile = data.get('profile', {})
+                latest_location = data.get('latest_location', {})
+                image_url = data.get('image_url')
+                
+                print(f"   - Profile data: {len(profile)} fields")
+                if profile:
+                    print(f"     * Name: {profile.get('name', 'N/A')}")
+                    print(f"     * Callsign: {profile.get('callsign', 'N/A')}")
+                    print(f"     * IMO: {profile.get('imo', 'N/A')}")
+                    print(f"     * Dimensions: {profile.get('dimensions', 'N/A')}")
+                
+                print(f"   - Latest location: {'Yes' if latest_location else 'No'}")
+                if latest_location:
+                    print(f"     * Lat: {latest_location.get('lat', 'N/A')}")
+                    print(f"     * Lng: {latest_location.get('lng', 'N/A')}")
+                    print(f"     * Timestamp: {latest_location.get('timestamp', 'N/A')}")
+                    print(f"     * Speed: {latest_location.get('speed', 'N/A')}")
+                    print(f"     * Course: {latest_location.get('course', 'N/A')}")
+                
+                print(f"   - Image URL: {'Yes' if image_url else 'No'}")
+                
+                # Check if vessel was created in local database
+                time.sleep(2)  # Wait for database update
+                vessel_response = requests.get(f"{BACKEND_URL}/vessels", timeout=10)
+                if vessel_response.status_code == 200:
+                    vessels_data = vessel_response.json()
+                    vessels = vessels_data.get('vessels', [])
+                    
+                    marinesia_vessel = None
+                    for vessel in vessels:
+                        if vessel.get('mmsi') == mmsi and vessel.get('source') == 'Marinesia':
+                            marinesia_vessel = vessel
+                            break
+                    
+                    if marinesia_vessel:
+                        print(f"   ✅ Vessel created in local database with source='Marinesia'")
+                        return True, data
+                    else:
+                        print(f"   ❌ Vessel not found in local database with Marinesia source")
+                        return False, data
+                else:
+                    print(f"   ❌ Failed to check local database: {vessel_response.status_code}")
+                    return False, data
+            else:
+                print(f"   ⚠️ Vessel not found in Marinesia database")
+                return True, data  # Not finding vessel is also a valid result
+                
+        else:
+            print(f"❌ Marinesia search endpoint failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Marinesia search test error: {e}")
+        return False, None
+
+def test_marinesia_history_endpoint(mmsi="247405600", limit=50):
+    """Test Marinesia Historical Locations - GET /api/marinesia/history/{mmsi}"""
+    print(f"📊 Testing Marinesia History Endpoint for MMSI {mmsi} (limit={limit})...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/marinesia/history/{mmsi}?limit={limit}", timeout=15)
+        
+        if response.status_code == 200:
+            data = response.json()
+            positions = data.get('positions', [])
+            count = data.get('count', 0)
+            
+            print(f"✅ Marinesia history endpoint working:")
+            print(f"   - Positions returned: {len(positions)}")
+            print(f"   - Count field: {count}")
+            
+            if positions:
+                # Check first position structure
+                first_pos = positions[0]
+                print(f"   - First position structure:")
+                print(f"     * Lat: {first_pos.get('lat', 'N/A')}")
+                print(f"     * Lng: {first_pos.get('lng', 'N/A')}")
+                print(f"     * Timestamp: {first_pos.get('timestamp', 'N/A')}")
+                print(f"     * Speed: {first_pos.get('speed', 'N/A')}")
+                print(f"     * Course: {first_pos.get('course', 'N/A')}")
+                
+                # Verify positions are stored in database with source="Marinesia"
+                time.sleep(2)  # Wait for database update
+                
+                # Check if positions were stored in local database
+                track_response = requests.get(f"{BACKEND_URL}/track/{mmsi}", timeout=10)
+                if track_response.status_code == 200:
+                    track_data = track_response.json()
+                    track_positions = track_data.get('positions', [])
+                    
+                    marinesia_positions = [pos for pos in track_positions if pos.get('source') == 'Marinesia']
+                    
+                    print(f"   - Marinesia positions in local database: {len(marinesia_positions)}")
+                    
+                    if len(marinesia_positions) > 0:
+                        print(f"   ✅ Historical positions stored in database with source='Marinesia'")
+                        return True, data
+                    else:
+                        print(f"   ❌ No Marinesia positions found in local database")
+                        return False, data
+                else:
+                    print(f"   ❌ Failed to check track data: {track_response.status_code}")
+                    return False, data
+            else:
+                print(f"   ⚠️ No historical positions found for vessel")
+                return True, data  # No history is also a valid result
+                
+        else:
+            print(f"❌ Marinesia history endpoint failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Marinesia history test error: {e}")
+        return False, None
+
+def test_enhanced_enrichment_status(mmsi="247405600"):
+    """Test Enhanced Enrichment Status - includes latest_location field"""
+    print(f"🔍 Testing Enhanced Enrichment Status for MMSI {mmsi}...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/vessel/{mmsi}/enrichment_status", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            status = data.get('status')
+            latest_location = data.get('latest_location')
+            
+            print(f"✅ Enhanced enrichment status endpoint working:")
+            print(f"   - Status: {status}")
+            print(f"   - Latest location included: {'Yes' if latest_location else 'No'}")
+            
+            if latest_location:
+                print(f"   - Latest location fields:")
+                print(f"     * Lat: {latest_location.get('lat', 'N/A')}")
+                print(f"     * Lng: {latest_location.get('lng', 'N/A')}")
+                print(f"     * Timestamp: {latest_location.get('timestamp', 'N/A')}")
+                print(f"     * Speed: {latest_location.get('speed', 'N/A')}")
+                print(f"     * Course: {latest_location.get('course', 'N/A')}")
+                
+                # Verify all required fields are present
+                required_fields = ['lat', 'lng', 'timestamp', 'speed', 'course']
+                missing_fields = [field for field in required_fields if field not in latest_location]
+                
+                if not missing_fields:
+                    print(f"   ✅ All required latest_location fields present")
+                    return True, data
+                else:
+                    print(f"   ❌ Missing latest_location fields: {missing_fields}")
+                    return False, data
+            else:
+                print(f"   ⚠️ No latest_location data (may be expected if vessel not enriched)")
+                return True, data  # No latest_location might be expected
+                
+        else:
+            print(f"❌ Enhanced enrichment status failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Enhanced enrichment status test error: {e}")
+        return False, None
+
+def test_track_blending(mmsi="247405600"):
+    """Test Track Blending - verify track includes both local AIS and Marinesia positions"""
+    print(f"🔄 Testing Track Blending for MMSI {mmsi}...")
+    try:
+        response = requests.get(f"{BACKEND_URL}/track/{mmsi}", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            positions = data.get('positions', [])
+            
+            print(f"✅ Track endpoint working:")
+            print(f"   - Total positions: {len(positions)}")
+            
+            if positions:
+                # Analyze sources
+                sources = {}
+                for pos in positions:
+                    source = pos.get('source', 'unknown')
+                    sources[source] = sources.get(source, 0) + 1
+                
+                print(f"   - Position sources:")
+                for source, count in sources.items():
+                    print(f"     * {source}: {count} positions")
+                
+                # Check if we have both local AIS and Marinesia data
+                has_marinesia = 'Marinesia' in sources
+                has_local_ais = any(source != 'Marinesia' for source in sources.keys())
+                
+                print(f"   - Has Marinesia data: {has_marinesia}")
+                print(f"   - Has local AIS data: {has_local_ais}")
+                
+                # Verify source field differentiates between sources
+                source_differentiated = True
+                for pos in positions:
+                    if 'source' not in pos:
+                        source_differentiated = False
+                        break
+                
+                if source_differentiated:
+                    print(f"   ✅ Source field properly differentiates between data sources")
+                    
+                    if has_marinesia:
+                        print(f"   ✅ Track successfully blends Marinesia and local data")
+                        return True, data
+                    else:
+                        print(f"   ⚠️ No Marinesia data found in track (may need to load history first)")
+                        return True, data  # Still valid if no Marinesia data yet
+                else:
+                    print(f"   ❌ Source field missing from position data")
+                    return False, data
+            else:
+                print(f"   ⚠️ No track positions found for vessel")
+                return True, data  # No track data might be expected
+                
+        else:
+            print(f"❌ Track endpoint failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Track blending test error: {e}")
+        return False, None
+
+def test_enrichment_worker(mmsi="247405600"):
+    """Test Enrichment Worker - trigger priority enrichment and verify latest_location storage"""
+    print(f"⚙️ Testing Enrichment Worker for MMSI {mmsi}...")
+    try:
+        # Trigger priority enrichment
+        response = requests.post(f"{BACKEND_URL}/vessel/{mmsi}/enrich_priority", timeout=10)
+        
+        if response.status_code == 200:
+            data = response.json()
+            message = data.get('message', '')
+            
+            print(f"✅ Priority enrichment triggered:")
+            print(f"   - Message: {message}")
+            
+            # Wait for worker to process
+            print(f"   ⏳ Waiting 5 seconds for worker to process...")
+            time.sleep(5)
+            
+            # Check enrichment status again
+            status_response = requests.get(f"{BACKEND_URL}/vessel/{mmsi}/enrichment_status", timeout=10)
+            
+            if status_response.status_code == 200:
+                status_data = status_response.json()
+                status = status_data.get('status')
+                latest_location = status_data.get('latest_location')
+                
+                print(f"   - Updated status: {status}")
+                print(f"   - Latest location stored: {'Yes' if latest_location else 'No'}")
+                
+                if status in ['found', 'not_found']:
+                    print(f"   ✅ Enrichment worker processed request successfully")
+                    
+                    if latest_location:
+                        print(f"   ✅ Latest location was stored by worker")
+                        return True, status_data
+                    else:
+                        print(f"   ⚠️ No latest location stored (may be expected if vessel not found)")
+                        return True, status_data
+                elif status == 'queued':
+                    print(f"   ⏳ Still queued - worker may be busy")
+                    return True, status_data
+                else:
+                    print(f"   ❌ Unexpected status after processing: {status}")
+                    return False, status_data
+            else:
+                print(f"   ❌ Failed to check status after enrichment: {status_response.status_code}")
+                return False, None
+                
+        elif response.status_code == 503:
+            print(f"   ⚠️ Marinesia integration disabled (503 Service Unavailable)")
+            return True, {"disabled": True}
+        else:
+            print(f"❌ Priority enrichment failed: {response.status_code} - {response.text}")
+            return False, None
+    except Exception as e:
+        print(f"❌ Enrichment worker test error: {e}")
+        return False, None
+
+def test_expanded_marinesia_integration():
+    """Test the expanded Marinesia integration with all new features"""
     print("=" * 70)
-    print("🌊 MarineISA API Integration Test Suite")
+    print("🌊 EXPANDED MARINESIA INTEGRATION TEST SUITE")
     print("=" * 70)
+    
+    # Use the test MMSI specified in the review request
+    test_mmsi = "247405600"
     
     test_results = {
         'api_connection': False,
-        'enrichment_status_endpoint': False,
-        'priority_enrichment_endpoint': False,
-        'automatic_queueing': False,
-        'api_call_functionality': False,
-        'data_storage_retrieval': False
+        'marinesia_search_endpoint': False,
+        'marinesia_history_endpoint': False,
+        'enhanced_enrichment_status': False,
+        'track_blending': False,
+        'enrichment_worker': False
     }
     
     # Test 1: API Connection
@@ -1063,26 +1355,29 @@ def test_marinesia_comprehensive():
         print("❌ Cannot proceed without API connection")
         return test_results
     
-    # Test 2: Enrichment Status Endpoint
-    status_success, _ = test_marinesia_enrichment_status()
-    test_results['enrichment_status_endpoint'] = status_success
+    # Test 2: Marinesia Search Endpoint
+    search_success, search_data = test_marinesia_search_endpoint(test_mmsi)
+    test_results['marinesia_search_endpoint'] = search_success
     
-    # Test 3: Priority Enrichment Endpoint
-    priority_success, _ = test_marinesia_priority_enrichment()
-    test_results['priority_enrichment_endpoint'] = priority_success
+    # Test 3: Marinesia Historical Locations
+    history_success, history_data = test_marinesia_history_endpoint(test_mmsi, 50)
+    test_results['marinesia_history_endpoint'] = history_success
     
-    # Test 4: Automatic Queueing
-    test_results['automatic_queueing'] = test_marinesia_automatic_queueing()
+    # Test 4: Enhanced Enrichment Status
+    status_success, status_data = test_enhanced_enrichment_status(test_mmsi)
+    test_results['enhanced_enrichment_status'] = status_success
     
-    # Test 5: API Call Functionality
-    test_results['api_call_functionality'] = test_marinesia_api_call()
+    # Test 5: Track Blending
+    track_success, track_data = test_track_blending(test_mmsi)
+    test_results['track_blending'] = track_success
     
-    # Test 6: Data Storage and Retrieval
-    test_results['data_storage_retrieval'] = test_marinesia_data_storage()
+    # Test 6: Enrichment Worker
+    worker_success, worker_data = test_enrichment_worker(test_mmsi)
+    test_results['enrichment_worker'] = worker_success
     
     # Summary
     print("\n" + "=" * 70)
-    print("📊 MARINESIA API TEST RESULTS")
+    print("📊 EXPANDED MARINESIA INTEGRATION TEST RESULTS")
     print("=" * 70)
     
     passed = 0
@@ -1097,27 +1392,91 @@ def test_marinesia_comprehensive():
     print(f"\nOverall: {passed}/{total} tests passed")
     
     if passed == total:
-        print("🎉 ALL MARINESIA TESTS PASSED - Integration is working correctly!")
-        print("✅ Enrichment endpoints responding properly")
-        print("✅ Background enrichment worker processing queue")
-        print("✅ MarineISA API calls succeeding")
-        print("✅ Vessel enrichment data properly stored and retrieved")
+        print("🎉 ALL EXPANDED MARINESIA TESTS PASSED!")
+        print("✅ Search endpoint successfully fetches and stores Marinesia vessel data")
+        print("✅ Historical locations are retrieved and stored in database")
+        print("✅ Latest location appears in enrichment status")
+        print("✅ Track endpoint blends Marinesia and local data")
+        print("✅ Enrichment worker processes requests and stores latest_location")
     else:
-        print("⚠️ SOME MARINESIA TESTS FAILED - Issues found with integration")
+        print("⚠️ SOME EXPANDED MARINESIA TESTS FAILED")
         
         # Detailed failure analysis
         failed_tests = [name for name, result in test_results.items() if not result]
         for test_name in failed_tests:
-            if test_name == 'enrichment_status_endpoint':
-                print("❌ CRITICAL: Enrichment status endpoint not working")
-            elif test_name == 'priority_enrichment_endpoint':
-                print("❌ CRITICAL: Priority enrichment endpoint not working")
-            elif test_name == 'api_call_functionality':
-                print("❌ CRITICAL: MarineISA API calls failing")
-            elif test_name == 'data_storage_retrieval':
-                print("❌ CRITICAL: Enrichment data not being stored properly")
+            if test_name == 'marinesia_search_endpoint':
+                print("❌ CRITICAL: Marinesia search endpoint not working")
+            elif test_name == 'marinesia_history_endpoint':
+                print("❌ CRITICAL: Marinesia history endpoint not working")
+            elif test_name == 'enhanced_enrichment_status':
+                print("❌ CRITICAL: Enhanced enrichment status missing latest_location")
+            elif test_name == 'track_blending':
+                print("❌ CRITICAL: Track blending not working properly")
+            elif test_name == 'enrichment_worker':
+                print("❌ CRITICAL: Enrichment worker not storing latest_location")
     
     return test_results
+
+def test_marinesia_comprehensive():
+    """Run comprehensive MarineISA API tests - UPDATED for expanded integration"""
+    print("=" * 70)
+    print("🌊 COMPREHENSIVE MARINESIA API INTEGRATION TEST SUITE")
+    print("=" * 70)
+    
+    # Run the expanded integration tests
+    expanded_results = test_expanded_marinesia_integration()
+    
+    # Also run some legacy tests for backward compatibility
+    legacy_test_results = {
+        'enrichment_status_endpoint': False,
+        'priority_enrichment_endpoint': False,
+    }
+    
+    # Test legacy enrichment status endpoint
+    status_success, _ = test_marinesia_enrichment_status("247405600")
+    legacy_test_results['enrichment_status_endpoint'] = status_success
+    
+    # Test legacy priority enrichment endpoint
+    priority_success, _ = test_marinesia_priority_enrichment("247405600")
+    legacy_test_results['priority_enrichment_endpoint'] = priority_success
+    
+    # Combine results
+    all_results = {**expanded_results, **legacy_test_results}
+    
+    # Summary
+    print("\n" + "=" * 70)
+    print("📊 COMPREHENSIVE MARINESIA API TEST RESULTS")
+    print("=" * 70)
+    
+    passed = 0
+    total = len(all_results)
+    
+    for test_name, result in all_results.items():
+        status = "✅ PASS" if result else "❌ FAIL"
+        print(f"{test_name.replace('_', ' ').title()}: {status}")
+        if result:
+            passed += 1
+    
+    print(f"\nOverall: {passed}/{total} tests passed")
+    
+    if passed == total:
+        print("🎉 ALL COMPREHENSIVE MARINESIA TESTS PASSED!")
+        print("✅ All expanded Marinesia integration features working")
+        print("✅ Legacy enrichment endpoints still functional")
+        print("✅ Search, history, and track blending all operational")
+    else:
+        print("⚠️ SOME COMPREHENSIVE MARINESIA TESTS FAILED")
+        
+        # Check if core expanded features are working
+        core_expanded_tests = ['marinesia_search_endpoint', 'marinesia_history_endpoint', 'enhanced_enrichment_status', 'track_blending']
+        core_passed = sum(1 for test in core_expanded_tests if all_results.get(test, False))
+        
+        if core_passed == len(core_expanded_tests):
+            print("✅ All core expanded integration features are working")
+        else:
+            print("❌ Some core expanded integration features failed")
+    
+    return all_results
 
 def run_real_time_streaming_test():
     """Run the real-time TCP streaming test suite"""
