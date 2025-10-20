@@ -2594,7 +2594,7 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
         raise HTTPException(status_code=500, detail=f"Failed to load track: {str(e)}")
 
 @api_router.get("/vessel/{mmsi}/enrichment_status")
-async def get_marinesia_status(mmsi: str):
+async def get_vessel_enrichment_status(mmsi: str):
     """Get MarineISA enrichment status for a vessel"""
     if not marinesia_client:
         return {"status": "disabled", "data": None}
