@@ -929,6 +929,9 @@ function App() {
     setShowVesselPanel(true);
     setLoadingTrack(true);
     
+    // Check MarineISA enrichment status
+    checkMarineisaEnrichment(vessel.mmsi);
+    
     // Load vessel track (all historic positions)
     try {
       const response = await axios.get(`${API}/track/${vessel.mmsi}`);
