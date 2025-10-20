@@ -1086,6 +1086,113 @@ frontend:
           - Status persistence between requests
           
           MARINESIA FRONTEND UI INTEGRATION IS FULLY FUNCTIONAL AND PRODUCTION-READY!
+
+
+backend:
+  - task: "Expanded Marinesia integration - historical locations and search"
+    implemented: true
+    working: "NA"
+    file: "/app/backend/marinesia_client.py, /app/backend/server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          MAJOR EXPANSION: Enhanced Marinesia integration to fetch ALL available data:
+          
+          Backend Changes (marinesia_client.py):
+          1. Added get_latest_location() - fetches current verified position from Marinesia
+          2. Added get_historical_locations() - fetches historical position data (configurable limit)
+          3. Updated enrich_vessel() to include latest_location in enrichment data
+          4. Added caching for location data (5 min for latest, 1 hour for historical)
+          
+          Backend Changes (server.py):
+          1. NEW ENDPOINT: GET /api/marinesia/search/{mmsi}
+             - Searches Marinesia database for vessel by MMSI
+             - Returns profile, latest location, and image
+             - Stores vessel in local database with source="Marinesia"
+             - Creates vessel record even if not in AIS sources
+          
+          2. NEW ENDPOINT: GET /api/marinesia/history/{mmsi}
+             - Fetches historical positions from Marinesia (default 100, max configurable)
+             - Stores positions in local database with source="Marinesia"
+             - Blends seamlessly with local AIS data in track display
+          
+          3. UPDATED: Background enrichment worker now stores latest_location
+          4. UPDATED: /api/vessel/{mmsi}/enrichment_status now returns latest_location
+          
+          Features Implemented:
+          - ✅ Fetch and display latest verified position from Marinesia
+          - ✅ Load historical positions from Marinesia (up to 200 points)
+          - ✅ Search integration: local DB first, then Marinesia if no results
+          - ✅ Blend Marinesia historical data with local AIS tracks
+          - ✅ Store all Marinesia data in local database for future reference
+
+frontend:
+  - task: "Enhanced search with Marinesia fallback and history loading"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          SEARCH ENHANCEMENT: Two-stage search with Marinesia fallback
+          
+          Search Function Updates:
+          1. Stage 1: Search local database (AIS sources)
+          2. Stage 2: If MMSI search returns no local results, automatically query Marinesia
+          3. Display results with "🌊 Marinesia Database" indicator
+          4. Automatically load Marinesia history when found (100 positions)
+          5. Toast notifications for each stage
+          
+          Vessel Info Panel Enhancements:
+          1. Display verified callsign from Marinesia (in green)
+          2. Show latest Marinesia position with timestamp
+          3. Added "Load Marinesia History" button
+          4. Button loads up to 200 historical positions
+          5. Reloads vessel track to blend Marinesia + local AIS data
+          6. Loading states for history button
+          
+          State Management:
+          - Added marinesiaLatestLocation state
+          - Added loadingMarinesiaHistory state
+          - Updated checkMarineisaEnrichment to extract latest_location
+          - Added loadMarinesiaHistory function
+          
+          UI Improvements:
+          - Callsign displayed prominently if available
+          - Latest position shown separately from local AIS
+          - Timestamp formatted for readability
+          - History button full-width for visibility
+
+  - task: "Fix stream message limit default to unlimited"
+    implemented: true
+    working: "NA"
+    file: "/app/frontend/src/App.js"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: true
+    status_history:
+      - working: "NA"
+        agent: "main"
+        comment: |
+          FIXED: Stream message limit now defaults to unlimited (0)
+          
+          Changes:
+          1. Input default changed from 500 to 0
+          2. Display shows "Unlimited" when limit is 0 or null
+          3. Backend already had default of 0 in DataSource model
+          4. Frontend now correctly displays and edits unlimited setting
+          
+          Before: "500 messages" (misleading default)
+          After: "Unlimited" (correct default)
+
           All requested features implemented and tested successfully with proper error handling and user experience.
 
 test_plan:
