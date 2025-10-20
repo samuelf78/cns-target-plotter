@@ -1,0 +1,11 @@
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+pyais==2.6.1
+python-multipart==0.0.6
+openpyxl==3.1.2
+websockets==12.0
+pyserial==3.5
+pydantic==2.5.0
+aiosqlite==0.19.0
+httpx==0.25.2
+python-dotenv==1.0.0
