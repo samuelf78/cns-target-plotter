@@ -2479,7 +2479,7 @@ function App() {
                                 <div className="spoof-edit">
                                   <Input
                                     type="number"
-                                    defaultValue={source.message_limit || 500}
+                                    defaultValue={source.message_limit || 0}
                                     onKeyPress={(e) => {
                                       if (e.key === 'Enter') {
                                         updateMessageLimit(source.source_id, parseInt(e.target.value));
@@ -2493,7 +2493,9 @@ function App() {
                                 </div>
                               ) : (
                                 <div className="spoof-display">
-                                  <span className="spoof-value">{source.message_limit || 500} messages</span>
+                                  <span className="spoof-value">
+                                    {source.message_limit === 0 || !source.message_limit ? 'Unlimited' : `${source.message_limit} messages`}
+                                  </span>
                                   <Button
                                     variant="ghost"
                                     size="sm"
