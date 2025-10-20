@@ -2720,14 +2720,14 @@ async def startup_event():
     main_event_loop = asyncio.get_event_loop()
     logger.info("Main event loop captured for stream handlers")
     
-    # Start MarineISA enrichment worker if enabled
+    # Start Marinesia enrichment worker if enabled
     if marinesia_client:
         enrichment_task = asyncio.create_task(marinesia_enrichment_worker())
-        logger.info("✅ MarineISA enrichment worker started")
+        logger.info("✅ Marinesia enrichment worker started")
 
 async def marinesia_enrichment_worker():
-    """Background worker to enrich vessels with MarineISA data"""
-    logger.info("🔄 MarineISA enrichment worker running")
+    """Background worker to enrich vessels with Marinesia data"""
+    logger.info("🔄 Marinesia enrichment worker running")
     while True:
         try:
             mmsi = await enrichment_queue.get()
