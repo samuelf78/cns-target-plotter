@@ -1168,22 +1168,68 @@ function App() {
     }
     
     try {
+      // First, search local database
       const response = await axios.post(`${API}/search`, {
         mmsi: searchMMSI || undefined,
         vessel_name: searchName || undefined
       });
       
-      // Set search results (don't replace vessels)
-      setSearchResults(response.data.vessels || []);
+      let localResults = response.data.vessels || [];
       
-      if (response.data.vessels.length === 0) {
-        toast.info('No vessels found matching your search');
-      } else {
-        toast.success(`Found ${response.data.vessels.length} vessel(s)`);
-        
-        // Don't auto-select - let user click to select
-        // User will click search result to center and select
+      // If searching by MMSI and no local results, try Marinesia
+      if (searchMMSI && localResults.length === 0) {
+        try {
+          toast.info('Searching Marinesia database...');
+          const marinesiaResponse = await axios.get(`${API}/marinesia/search/${searchMMSI}`);
+          
+          if (marinesiaResponse.data.found) {
+            const marinesiaVessel = marinesiaResponse.data.vessel;
+            const location = marinesiaResponse.data.latest_location;
+            
+            // Add Marinesia indicator
+            const enrichedVessel = {
+              mmsi: searchMMSI,
+              name: marinesiaVessel.name,
+              callsign: marinesiaVessel.callsign,
+              imo: marinesiaVessel.imo,
+              ship_type: marinesiaVessel.ship_type,
+              country: marinesiaVessel.country,
+              length: marinesiaVessel.length,
+              width: marinesiaVessel.width,
+              lat: location?.lat,
+              lon: location?.lng,
+              source: 'Marinesia',
+              is_marinesia: true,
+              last_seen: location?.ts || new Date().toISOString()
+            };
+            
+            localResults = [enrichedVessel];
+            toast.success('✓ Found vessel in Marinesia database');
+            
+            // Optionally load historical data
+            try {
+              await axios.get(`${API}/marinesia/history/${searchMMSI}?limit=100`);
+            } catch (err) {
+              console.log('Could not load Marinesia history:', err);
+            }
+          } else {
+            toast.warning('Vessel not found in local or Marinesia databases');
+          }
+        } catch (marinesiaError) {
+          console.log('Marinesia search failed:', marinesiaError);
+          // Continue with local results only
+        }
       }
+      
+      // Set search results (don't replace vessels)
+      setSearchResults(localResults);
+      
+      if (localResults.length === 0) {
+        toast.info('No vessels found matching your search');
+      } else if (!localResults[0]?.is_marinesia) {
+        toast.success(`Found ${localResults.length} vessel(s)`);
+      }
+      
     } catch (error) {
       console.error('Search error:', error);
       const errorMsg = error.response?.data?.detail || error.message || 'Unknown error';
