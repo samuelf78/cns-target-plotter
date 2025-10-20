@@ -2621,7 +2621,7 @@ async def get_marinesia_status(mmsi: str):
     # Not enriched yet - assumed queued
     return {"status": "queued", "data": None}
 
-@api_router.post("/vessel/{mmsi}/enrich-priority")
+@api_router.post("/vessel/{mmsi}/enrich_priority")
 async def enrich_vessel_priority(mmsi: str):
     """Trigger priority enrichment for a vessel"""
     if not marinesia_client:
