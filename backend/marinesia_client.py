@@ -76,7 +76,7 @@ class MarinesiaClient:
                     self._set_cache(cache_key, {'not_found': True})
                     return None
                 else:
-                    logger.warning(f"MarineISA API returned status {response.status_code} for MMSI {mmsi}")
+                    logger.warning(f"Marinesia API returned status {response.status_code} for MMSI {mmsi}")
                     return None
                     
         except Exception as e:
