@@ -2882,6 +2882,7 @@ async def marinesia_enrichment_worker():
                             "mmsi": mmsi,
                             "profile_data": enriched_data.get('profile'),
                             "image_url": enriched_data.get('image_url'),
+                            "latest_location": enriched_data.get('latest_location'),
                             "enriched_at": enriched_data.get('enriched_at')
                         }
                     },
