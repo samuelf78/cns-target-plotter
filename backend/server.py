@@ -53,6 +53,14 @@ db = client[os.environ['DB_NAME']]
 enrichment_queue = asyncio.Queue()
 enrichment_task = None
 
+# Collections used:
+# - db.vessels: Vessel information and positions
+# - db.positions: Position history
+# - db.messages: Raw AIS messages
+# - db.sources: Data source configurations
+# - db.text_messages: Text-based AIS messages
+# - db.vessel_enrichment: MarineISA enrichment data
+
 # Create the main app without a prefix
 app = FastAPI()
 
