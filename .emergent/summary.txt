@@ -1,61 +1,94 @@
 <analysis>
-The AI engineer's work involved incrementally building and refining a nautical AIS/NMEA data application. Initially, it established core functionalities like real-time data streaming (TCP/UDP/Serial), MongoDB integration, a React frontend, and a FastAPI backend. Key initial issues included AIS message parsing, data serialization, and UI/UX enhancements using Shadcn.
+The AI engineer's work involved incrementally enhancing a nautical AIS/NMEA application. Initially, core functionalities like data streaming, MongoDB integration, React/FastAPI structure, and UI were established. Over time, significant features were added, including comprehensive position validation, advanced  export, and refined target management with geographic and vessel limiting. Performance was optimized via canvas rendering and marker clustering.
 
-Subsequent iterations focused on critical bug fixes and feature additions. These included comprehensive position validation (filtering invalid lat/lon, backfilling previous valid positions), enhancing  export to include all raw and historical data, and refining target management with vessel limiting. UI issues like the responsive source manager panel were addressed, along with implementing geographic filtering (viewport, rectangle, world) and significant performance optimizations (canvas rendering, marker clustering).
+Recent development focused on AIS data interpretation (dynamic vessel icons, N/A for invalid headings, SAR target icons) and substantial UI/UX improvements (collapsible sidebar, dynamic trail loading, map interaction fixes). A major feature, the temporal playback slider for historical vessel positions, was implemented and subsequently debugged for zoom and multi-vessel rendering issues.
 
-The most recent phase focused on advanced AIS data interpretation, distinguishing vessel markers based on valid heading/course (triangle, circle for no data), displaying N/A for invalid headings in the info panel, and introducing a specific SAR target icon. The engineer consistently iterated based on user feedback, ensuring data integrity, usability, and performance were progressively improved.
+The most recent phase involved a proposed migration from MongoDB to SQLite for a Windows native executable, which was then deferred. Instead, the focus shifted to integrating the MarineISA API for automatic vessel data enrichment. The AI engineer successfully implemented a parallel SQLite backend with MarineISA, demonstrated its functionality, and is currently integrating MarineISA features into the primary MongoDB backend for frontend validation.
 </analysis>
 
 <product_requirements>
-The application is a nautical AIS/NMEA data system for real-time streaming, storing raw/decoded data in MongoDB, and plotting on a map using . It supports TCP/UDP/Serial/file inputs and decodes all AIS message types via . Key features include historical position trails (color-coded by age) with directional arrows, a floating info panel showing detailed vessel data (name, call sign, MMSI, country, multiple sources, spoof status), and a data source manager (add/disable/remove sources, Disable All). Search by MMSI, ship name, or call sign is implemented. Base stations are blue squares, and VDO messages show pink range circles for own base stations, representing coverage to the furthest mobile vessel (excluding other base stations). Spoof limits (default 500km) gray out invalid targets. UI improvements include app title, text colors, file upload progress, and Search MMSI on VesselFinder button. A status panel with database stats and  export is present. Auto-centering on new targets was implemented but later entirely removed. Recent features include a vessel limiter to plot only the N most recent targets, plotting all target types (vessels, base stations, AtoNs with specific icons, multi-source base stations with asterisks), and a geographic filter (viewport, rectangle, whole world) to only render targets within the selected area. An option to Keep non-vessel targets when limiting stream targets was also added. The latest requirement is to use course direction if heading is invalid, draw a circle if both are invalid, display N/A for invalid non-vessel headings, and use a primitive airplane symbol for SAR targets.
+The application is a nautical AIS/NMEA data system designed for real-time streaming and storage of raw/decoded data in MongoDB, visualized on a  map. It supports TCP/UDP/Serial/file inputs and decodes AIS messages. Core features include historical position trails (color-coded by age, with directional arrows), a floating info panel (name, call sign, MMSI, country, spoof status, multiple sources), and a data source manager (add/disable/remove, Disable All). Search by MMSI, ship name, or call sign is supported. Base stations are blue squares, and VDO messages show pink range circles for own base stations, representing coverage to the furthest mobile vessel. Spoof limits (default 500km) gray out invalid targets. UI includes an app title, text colors, file upload progress, and a Search MMSI on VesselFinder button. A status panel with database stats and  export is present. Auto-centering on new targets was implemented but removed.
+
+Recent feature additions include a vessel limiter (N most recent targets), plotting all target types (vessels, base stations, AtoNs with specific icons, multi-source base stations with asterisks), and a geographic filter (viewport, rectangle, whole world) for target rendering. An option to Keep non-vessel targets was added for stream limiting. Latest requirements mandated using course direction for invalid heading, a circle icon if both invalid, N/A for invalid headings (all target types), and a primitive airplane for SAR targets (Type 9 messages). Further requests included: making the only use last 500 messages limiter inactive by default (0/unlimited); a time slider in the MMSI panel to reverse time for selected and visible vessels, with interpolation and real position indicators; centering map view on search result clicks (without zoom); ensuring map clicks *only* select vessels (no pan/zoom); dynamic loading of trails for all vessels; a smaller title bar; a collapsible left menu (hidden by default, double arrows, no animation); geo-filter default to viewport, with only custom rectangle as another option; utilizing logged timestamps in file parsing; and integrating the MarineISA API for automatic vessel data enrichment with UI status indicators.
 </product_requirements>
 
 <key_technical_concepts>
-- **FastAPI**: Backend API, data processing, DB interaction.
-- **React**: Frontend UI, state, .
-- **MongoDB**: NoSQL data storage.
+- **FastAPI**: Python backend for API, data processing.
+- **React**: Frontend UI,  for map.
+- **MongoDB**: Primary NoSQL data storage (initially).
+- **SQLite**: Proposed/parallel database for Windows executable.
 - **PyAIS**: AIS/NMEA message decoding.
 - **Shadcn UI & Tailwind CSS**: Frontend styling.
-- **Asyncio/Threading**: Concurrent stream handling.
 - ****: Map marker clustering.
-- **Canvas Rendering**: For map performance ().
+- **, , **: SQLite, HTTP client, environment variables (for new backend/integration).
+- **PyInstaller, Electron**: For Windows native executable compilation (deferred).
 </key_technical_concepts>
 
 <code_architecture>
-The application uses a FastAPI (Python) backend and a React (JavaScript) frontend, with MongoDB for data storage.
+The application features a FastAPI (Python) backend and a React (JavaScript) frontend, originally utilizing MongoDB for data storage. A parallel SQLite backend was also introduced.
 
 
 
-- ****:
-    -   **Purpose**: Main FastAPI application for API routes, data processing, and database interactions.
-    -   **Summary of changes**: Numerous updates for AIS message processing (), including validation for invalid lat/lon (e.g., 181/91 degrees), backfilling positions, and specific handling for AIS types 1, 2, 3, 4 (Base Station), 18 (Class B), and 21 (AtoN). Modified data export to  to be comprehensive, including raw messages and all historical positions, with error handling for  and batching for large datasets. Implemented target limiting (most recent N vessels per source) and a keep non-vessel targets option. Enhanced VDO processing to distinguish own vs received base stations, track source counts, and conditionally calculate range based on mobile vessels from file sources, excluding streams and AtoNs. Added multi-base-station detection per source to disable range calculation. Implemented geographic filtering for active vessels and VDO data based on viewport or defined rectangle. Added , ,  fields to  model.
+-   ****:
+    -   **Purpose**: Main FastAPI application handling API routes, data processing, and MongoDB interactions.
+    -   **Summary of changes**: Numerous updates for AIS message parsing (e.g., , handling invalid lat/lon, backfilling). Modified  export. Implemented target limiting and geographic filtering. Added specific fields to  model. Most recently, **MarineISA API integration** was added, including API key handling,  import, background enrichment queue, and new API endpoints (, ) to fetch and display enrichment status, and trigger priority enrichment.  was added to use message UTC seconds.  was added to handle logged timestamps in file uploads. The  in  model was defaulted to 0 (unlimited). SAR target identification was updated to treat all Type 9 messages as SAR.
+-   ****:
+    -   **Purpose**: Backend dependency management.
+    -   **Summary of changes**: Added  and  for MarineISA integration.
+-   ****:
+    -   **Purpose**: NEW file containing the client for MarineISA API interactions, including rate limiting and caching.
+-   ****:
+    -   **Purpose**: Environment variables for backend.
+    -   **Summary of changes**: Added , , , .
+-   **, , , **:
+    -   **Purpose**: NEW directory and files for a parallel FastAPI backend using SQLite instead of MongoDB, also with MarineISA integration. This was created for testing the migration, but the main application still uses the MongoDB backend.
 -   ****:
     -   **Purpose**: Main React component managing UI, state, and client-side logic.
-    -   **Summary of changes**: Implemented helper functions for extracting  and handling AIS / validity. Created new icon functions for AtoNs (yellow diamond), own base stations (green square), received base stations (orange square), generic circles, and SAR targets (airplane). Updated vessel and VDO marker rendering to use these new icons and logic, including asterisks for multi-source base stations. Implemented UI controls for target limit, keep non-vessel targets, and geographic filtering (radio buttons, coordinate inputs, viewport/rectangle/world modes). Input fields for geo-filter were made more permissive to handle decimal issues. Auto-zoom functionality for new sources was implemented (file: on complete, stream: after 2s or 50 targets) and then *completely removed* due to user feedback, ensuring map position is stable. Replaced the static vessel list with a dynamic  panel, fixing associated runtime errors. Implemented  for  and  for performance, with adjustable  and  (set to 8). Fixed  to correctly fetch and display all vessel tracks and addressed performance issues related to  dependencies.
+    -   **Summary of changes**: Implemented helper functions for /, and new icons (AtoN, own/received base stations, generic circles, SAR airplane). Updated vessel and VDO marker rendering. Implemented UI controls for target limit, keep non-vessel targets, and geographic filtering. Auto-zoom for new sources was removed.  and  were added for performance. Trails loading was fixed.
+    -   Recent changes:
+        -   Display N/A for invalid headings for all target types in info panel.
+        -   Modified  to center map without changing zoom on search result clicks, and no pan/zoom on map clicks.
+        -   Implemented temporal playback (time slider UI, state variables, interpolation logic, temporal marker/trail rendering).
+        -    was updated to dynamically load trails for new vessels in view.
+        -   UI adjustments: smaller header title, collapsible sidebar with toggle button ( state,  icons), geo-filter defaults to viewport and removes whole world option.
+        -   Added **MarineISA status display** (, ) and a refresh button to the vessel info panel.
 -   ****:
     -   **Purpose**: Global and component-specific styles using Tailwind CSS.
-    -   **Summary of changes**: Adjustments to  and  to resolve overflowing content and ensure delete buttons are visible across different screen sizes and zoom levels, including  layout. Added styles for new marker cluster groups and geo-filter panel.
--   ** & **:
-    -   **Purpose**: Dependency management.
-    -   **Summary of changes**:  was added to .
+    -   **Summary of changes**: Adjustments to  for responsiveness. Added styles for new marker cluster groups and geo-filter panel. Styles for collapsible sidebar and header adjustments were added (e.g.,  class). Removed animation for sidebar.
+-   ****:
+    -   **Purpose**: Frontend dependency management.
+    -   **Summary of changes**:  was added. (Further Electron/PyInstaller related dev dependencies were proposed but not yet implemented in the sandbox).
+-   ****:
+    -   **Purpose**: NEW file created to provide a quick comparison and test interface for both the MongoDB and SQLite backends, although the user dismissed its utility.
 </code_architecture>
 
 <pending_tasks>
-- Complete the implementation of AIS specification improvements regarding heading/course validation and SAR target icons.
-- Finalize the display logic for invalid heading/course data (circle icon) and N/A for non-vessel targets' headings in the UI.
+- Verify MarineISA integration in the main MongoDB backend: ensure enrichment status displays correctly in the UI and the priority enrichment button functions.
+- Fully implement the time slider feature for all visible vessels, including interpolation smoothness and greyed-out vessels without data in the time frame.
 </pending_tasks>
 
 <current_work>
-Immediately before this summary request, the AI engineer was working on implementing AIS specification improvements related to vessel heading and course data interpretation. This involves:
+Immediately before this summary request, the AI engineer was focused on integrating MarineISA API functionality into the **main MongoDB backend** (located at ). This was necessary because the frontend was still pointing to the MongoDB backend (port 8001), and the MarineISA enrichment endpoints had only been implemented in the parallel SQLite backend (port 8002).
 
-1.  **Creating helper functions:**  and  to check for valid heading (not 511) and course data.
-2.  **Creating new icons:** A simple circle icon for vessels without valid heading/course, and a primitive airplane icon for SAR targets.
-3.  **Updating vessel marker rendering:** Modifying the map rendering logic in  to dynamically choose icons (triangle, circle, SAR airplane) based on the vessel's AIS data. This includes using course direction if heading is invalid, and a circle if both are invalid.
-4.  **Updating the info panel:** Ensuring that if a non-vessel target reports a heading of 511 (N/A), the info panel displays N/A instead of the raw number.
+The user reported Failed to trigger enrichment when attempting to use the MarineISA features from the frontend, prompting this shift in focus.
 
-The latest action was attempting to update the info panel to display N/A for invalid heading, after previously having created the helper functions and new icons, and updated the main vessel marker rendering. The change was targeted at  around where  is displayed.
+The AI engineer's actions involved:
+1.  **Creating **: A new file for the MarineISA API client, handling requests, caching, and rate limiting.
+2.  **Updating **: Adding  for asynchronous HTTP requests and  for environment variable management.
+3.  **Updating **: Adding , , , and  for MarineISA configuration.
+4.  **Modifying **:
+    *   Importing  and .
+    *   Initializing the  based on environment variables.
+    *   Adding a global  and a background  to process vessel enrichment requests asynchronously.
+    *   Adding new API endpoints:
+        *   : To query the current MarineISA enrichment status for a given MMSI.
+        *   : To manually trigger or prioritize MarineISA enrichment for a specific MMSI.
+    *   Integrating calls to the  within the existing  function to automatically queue vessels for enrichment upon processing.
+5.  **Restarting the MongoDB backend**: To apply all the new changes and activate the MarineISA integration.
+
+The last message in the trajectory indicates that the MongoDB backend successfully restarted, and debug logs show MarineISA integration enabled multiple times. The next step is to test the newly implemented MarineISA endpoints and functionality on this main backend.
 </current_work>
 
 <optional_next_step>
-Complete the update to the info panel in  to correctly display N/A for invalid headings.
+Test the MarineISA integration on the main MongoDB backend by verifying the new enrichment status display and the refresh option in the frontend.
 </optional_next_step>

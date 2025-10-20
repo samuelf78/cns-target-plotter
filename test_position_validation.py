@@ -12,7 +12,7 @@ import os
 from datetime import datetime
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://vessel-monitor-app.preview.emergentagent.com/api"
+BACKEND_URL = "https://maritime-radar-1.preview.emergentagent.com/api"
 
 def test_api_connection():
     """Test basic API connectivity"""

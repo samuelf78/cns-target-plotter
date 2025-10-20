@@ -15,7 +15,7 @@ import tempfile
 import os
 
 # Backend URL from frontend .env
-BACKEND_URL = "https://vessel-monitor-app.preview.emergentagent.com/api"
+BACKEND_URL = "https://maritime-radar-1.preview.emergentagent.com/api"
 WS_URL = "wss://marinevis.preview.emergentagent.com/api/ws"
 
 def test_api_connection():
