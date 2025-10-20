@@ -2595,7 +2595,7 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
 
 @api_router.get("/vessel/{mmsi}/enrichment_status")
 async def get_vessel_enrichment_status(mmsi: str):
-    """Get MarineISA enrichment status for a vessel"""
+    """Get Marinesia enrichment status for a vessel"""
     if not marinesia_client:
         return {"status": "disabled", "data": None}
     
@@ -2625,7 +2625,7 @@ async def get_vessel_enrichment_status(mmsi: str):
 async def enrich_vessel_priority(mmsi: str):
     """Trigger priority enrichment for a vessel"""
     if not marinesia_client:
-        raise HTTPException(status_code=503, detail="MarineISA integration not enabled")
+        raise HTTPException(status_code=503, detail="Marinesia integration not enabled")
     
     # Delete old enrichment to force re-fetch
     await db.vessel_enrichment.delete_one({"mmsi": mmsi})
