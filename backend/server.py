@@ -2588,6 +2588,53 @@ async def get_vessel_track(mmsi: str, limit: int = 10000):
             'mmsi': mmsi, 
             'track': serialized_positions,
             'count': len(serialized_positions),
+
+@api_router.get("/vessel/{mmsi}/marinesia-status")
+async def get_marinesia_status(mmsi: str):
+    """Get MarineISA enrichment status for a vessel"""
+    if not marinesia_client:
+        return {"status": "disabled", "data": None}
+    
+    # Check if vessel has enrichment data
+    enrichment = await db.vessel_enrichment.find_one({"mmsi": mmsi})
+    
+    if enrichment:
+        profile_data = enrichment.get('profile_data')
+        if profile_data and profile_data.get('not_found'):
+            return {
+                "status": "not_found",
+                "data": None,
+                "checked_at": enrichment.get('enriched_at')
+            }
+        elif profile_data:
+            return {
+                "status": "found",
+                "data": profile_data,
+                "image_url": enrichment.get('image_url'),
+                "enriched_at": enrichment.get('enriched_at')
+            }
+    
+    # Not enriched yet - assumed queued
+    return {"status": "queued", "data": None}
+
+@api_router.post("/vessel/{mmsi}/enrich-priority")
+async def enrich_vessel_priority(mmsi: str):
+    """Trigger priority enrichment for a vessel"""
+    if not marinesia_client:
+        raise HTTPException(status_code=503, detail="MarineISA integration not enabled")
+    
+    # Delete old enrichment to force re-fetch
+    await db.vessel_enrichment.delete_one({"mmsi": mmsi})
+    
+    # Queue for enrichment
+    await enrichment_queue.put(mmsi)
+    
+    return {
+        "message": f"Vessel {mmsi} queued for priority enrichment",
+        "queue_position": enrichment_queue.qsize()
+    }
+
+
             'total_records': len(positions)
         }
     except Exception as e:
