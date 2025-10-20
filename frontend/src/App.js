@@ -2099,6 +2099,33 @@ function App() {
                             />
                           </div>
                         )}
+                        {marinesiaLatestLocation && (
+                          <>
+                            <div className="info-row">
+                              <span className="info-label">Latest Marinesia Position:</span>
+                              <span className="info-value">
+                                {marinesiaLatestLocation.lat?.toFixed(5)}°, {marinesiaLatestLocation.lng?.toFixed(5)}°
+                              </span>
+                            </div>
+                            <div className="info-row">
+                              <span className="info-label">Marinesia Timestamp:</span>
+                              <span className="info-value">
+                                {new Date(marinesiaLatestLocation.ts).toLocaleString()}
+                              </span>
+                            </div>
+                          </>
+                        )}
+                        <div style={{ marginTop: '10px' }}>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => loadMarinesiaHistory(selectedVessel.mmsi)}
+                            disabled={loadingMarinesiaHistory}
+                            style={{ width: '100%' }}
+                          >
+                            {loadingMarinesiaHistory ? 'Loading History...' : '📜 Load Marinesia History'}
+                          </Button>
+                        </div>
                       </>
                     )}
                     
