@@ -2638,13 +2638,6 @@ async def enrich_vessel_priority(mmsi: str):
         "queue_position": enrichment_queue.qsize()
     }
 
-
-            'total_records': len(positions)
-        }
-    except Exception as e:
-        logger.error(f"Error loading track for {mmsi}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to load track: {str(e)}")
-
 @api_router.get("/history/{mmsi}")
 async def get_vessel_history(mmsi: str):
     """Get complete historical data for an MMSI - properly merged from all sources"""
