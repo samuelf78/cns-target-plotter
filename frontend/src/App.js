@@ -929,7 +929,7 @@ function App() {
     setShowVesselPanel(true);
     setLoadingTrack(true);
     
-    // Check MarineISA enrichment status
+    // Check Marinesia enrichment status
     checkMarineisaEnrichment(vessel.mmsi);
     
     // Load vessel track (all historic positions)
