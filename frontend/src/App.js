@@ -1242,8 +1242,8 @@ function App() {
     if (!mmsi) return;
     
     try {
-      // Check if vessel has MarineISA enrichment
-      const response = await axios.get(`${API}/vessel/${mmsi}/marinesia-status`);
+      // Check if vessel has Marinesia enrichment
+      const response = await axios.get(`${API}/vessel/${mmsi}/enrichment_status`);
       if (response.data) {
         setMarineisaStatus(response.data.status || 'unknown');
         setMarineisaData(response.data.data || null);
@@ -1260,7 +1260,7 @@ function App() {
     
     setRefreshingMarineisa(true);
     try {
-      const response = await axios.post(`${API}/vessel/${mmsi}/enrich-priority`);
+      const response = await axios.post(`${API}/vessel/${mmsi}/enrich_priority`);
       toast.success('Vessel queued for priority enrichment');
       
       // Wait a bit then check status
