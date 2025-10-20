@@ -1235,6 +1235,41 @@ function App() {
     }
   };
 
+  const checkMarineisaEnrichment = async (mmsi) => {
+    if (!mmsi) return;
+    
+    try {
+      // Check if vessel has MarineISA enrichment
+      const response = await axios.get(`${API}/vessel/${mmsi}/marinesia-status`);
+      if (response.data) {
+        setMarineisaStatus(response.data.status || 'unknown');
+        setMarineisaData(response.data.data || null);
+      }
+    } catch (error) {
+      // If endpoint doesn't exist, that's okay
+      setMarineisaStatus('unknown');
+      setMarineisaData(null);
+    }
+  };
+
+  const refreshMarineisaData = async (mmsi) => {
+    if (!mmsi) return;
+    
+    setRefreshingMarineisa(true);
+    try {
+      const response = await axios.post(`${API}/vessel/${mmsi}/enrich-priority`);
+      toast.success('Vessel queued for priority enrichment');
+      
+      // Wait a bit then check status
+      setTimeout(() => checkMarineisaEnrichment(mmsi), 3000);
+    } catch (error) {
+      console.error('Error triggering enrichment:', error);
+      toast.error('Failed to trigger enrichment');
+    } finally {
+      setRefreshingMarineisa(false);
+    }
+  };
+
   const exportToExcel = async () => {
     try {
       const response = await axios.get(`${API}/export/xlsx`, {
