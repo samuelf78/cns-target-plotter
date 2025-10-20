@@ -66,10 +66,14 @@ class MarinesiaClient:
                 )
                 
                 if response.status_code == 200:
-                    data = response.json()
-                    self._set_cache(cache_key, data)
-                    logger.info(f"Successfully fetched profile for MMSI {mmsi}")
-                    return data
+                    result = response.json()
+                    # Extract just the data field if it exists
+                    if result.get('error') is False and result.get('data'):
+                        data = result['data']
+                        self._set_cache(cache_key, data)
+                        logger.info(f"Successfully fetched profile for MMSI {mmsi}")
+                        return data
+                    return None
                 elif response.status_code == 404:
                     logger.debug(f"Vessel profile not found for MMSI {mmsi}")
                     # Cache the 404 to avoid repeated requests
