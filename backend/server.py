@@ -59,7 +59,7 @@ enrichment_task = None
 # - db.messages: Raw AIS messages
 # - db.sources: Data source configurations
 # - db.text_messages: Text-based AIS messages
-# - db.vessel_enrichment: MarineISA enrichment data
+# - db.vessel_enrichment: Marinesia enrichment data
 
 # Create the main app without a prefix
 app = FastAPI()
