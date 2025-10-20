@@ -991,9 +991,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Display N/A for heading 511 (invalid) for ALL target types"
-    - "Center map on target when clicking search results"
-    - "Temporal playback feature with time slider"
+    - "MarineISA API integration and vessel enrichment"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
